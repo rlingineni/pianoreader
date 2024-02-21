@@ -49,10 +49,11 @@ export default function VideoPlayerControls(props) {
   // add a video scrubber with seek controls and play pause button
 
   const { videoId } = props;
-  const [currentTime, setCurrentTime] = useState(0);
 
   const videoRef = useRef(document.getElementById(videoId));
   const videoEl = videoRef.current;
+
+  const [currentTime, setCurrentTime] = useState(videoEl.currentTime);
 
   const [isPlaying, setIsPlaying] = useState(false);
 

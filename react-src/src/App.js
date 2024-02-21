@@ -27,19 +27,10 @@ function App() {
   const [currentStep, setCurrentStep] = useState(0);
 
   const [keyDistance, setKeyDistance] = useState(0);
-  const [rowHeight, setRowHeight] = useState(0);
+  const [trackerRowHeight, setTrackerRowHeight] = useState(270);
 
   // Log current directory or error after component is mounted
   useEffect(() => {
-    console.log("Reading current dir");
-    filesystem
-      .readDirectory("./")
-      .then((data) => {
-        console.log(data);
-      })
-      .catch((err) => {
-        console.log(err);
-      });
     loadVideoInBackground();
   }, []);
 
@@ -91,7 +82,12 @@ function App() {
     // save it to the filesystem
     await storage.setData("YT_ID", JSON.stringify(allValues));
 
-    placePixelTrackers(allValues);
+    placePixelTrackers(allValues, trackerRowHeight);
+  }
+
+  function onTrackerRowHeightChange(value) {
+    setTrackerRowHeight(value);
+    placePixelTrackers(getKeyTemplate(), value);
   }
 
   return (
@@ -164,12 +160,32 @@ function App() {
                       max="25"
                       value={keyDistance}
                       onChange={(e) => {
-                        adjustKeyOffset(undefined, e.target.value);
+                        adjustKeyOffset(undefined, parseInt(e.target.value));
                       }}
                       className="w-32 h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer dark:bg-gray-700 rotate-180"
                     />
                     <p gap="2">
                       {(keyDistance * -1).toString().padStart(2, "0")}
+                    </p>
+                  </span>
+                </div>
+                <div className="w-48">
+                  <label class="block mb-1 text-sm font-medium text-gray-900">
+                    Row Height
+                  </label>
+                  <span className="flex items-center gap-2">
+                    <input
+                      type="range"
+                      min="0"
+                      max="450"
+                      value={trackerRowHeight}
+                      onChange={(e) =>
+                        onTrackerRowHeightChange(parseInt(e.target.value))
+                      }
+                      className="w-32 h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer dark:bg-gray-700"
+                    />
+                    <p gap="2">
+                      {trackerRowHeight.toString().padStart(2, "0")}
                     </p>
                   </span>
                 </div>

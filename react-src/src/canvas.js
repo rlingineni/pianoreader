@@ -262,16 +262,11 @@ export function getKeyTemplate() {
   const notes = ["C", "D", "E", "F", "G", "A", "B"];
   const groupCenter = pianoKeys.getPointByOrigin("center", "center");
 
-  // get center of video
+  // const offsetFromVideoEdge = pianoKeys._objects[0].left + groupCenter.x;
 
-  const offsetFromVideoEdge = pianoKeys._objects[0].left + groupCenter.x;
-  console.log("offsetFromInsideOfVideo", offsetFromVideoEdge);
+  // const distanceToVideoEdge = video1.left;
 
-  const distanceToVideoEdge = video1.left;
-  console.log("distanceToVideoEdge", distanceToVideoEdge);
-
-  const start = offsetFromVideoEdge - distanceToVideoEdge;
-  console.log(start);
+  // const start = offsetFromVideoEdge - distanceToVideoEdge;
 
   const getLeft = (key) => {
     return key.left + groupCenter.x; // subtract distanceToVideoEdge used to reset the start
@@ -291,18 +286,18 @@ export function getKeyTemplate() {
   // copy allKeys to clipboard
   navigator.clipboard.writeText(JSON.stringify(allKeys));
 
-  console.log(allKeys[0]);
+  // console.log(allKeys[0]);
 
   return allKeys;
 }
 
-export function placePixelTrackers(pianoKeyTemplate, trackerHeight) {
+export function placePixelTrackers(pianoKeyTemplate, trackerRowStart) {
   // remove the tracking points
   removeTrackingLines();
   canvas.renderAll();
 
   const trackerWidth = pianoKeyTemplate[0].end - pianoKeyTemplate[0].start;
-  const pixelRowStart = 270 || trackerHeight;
+  const pixelRowStart = trackerRowStart || 270;
 
   const width = video1.getScaledWidth();
 
@@ -339,11 +334,18 @@ export function placePixelTrackers(pianoKeyTemplate, trackerHeight) {
   }
   canvas.renderAll();
 
-  getNotesForCurrentFrame();
+  getNotesForCurrentFrame(true);
 }
 
-export function getNotesForCurrentFrame() {
+const dummyPixelRects = [];
+
+export function getNotesForCurrentFrame(highlight) {
   if (!pixelTrackingGroup || pixelTrackingGroup._objects.length === 0) return;
+
+  // remove the dummy pixel rects
+  for (const rect of dummyPixelRects) {
+    canvas.remove(rect);
+  }
 
   // get all the objects in the pixelTrackingGroup
   const pixelRects = pixelTrackingGroup._objects;
@@ -364,6 +366,9 @@ export function getNotesForCurrentFrame() {
     const pixels = [];
     const top = getTop(rect);
     const left = getLeft(rect);
+
+    rect.fill = "rgba(0,0,0,0)";
+
     // get the color in a rectangle of pixels
     for (let i = 0; i < rect.width; i++) {
       // get the color in a rectangle of pixels
@@ -387,7 +392,18 @@ export function getNotesForCurrentFrame() {
     const pianoKey = rect.get("piano-key");
     if (color === "white") {
       keyValues.push(pianoKey);
-      rect.fill = "blue";
+
+      // create a rectangle 5 pixels above
+      const dummy = new fabric.Rect({
+        left: left,
+        top: top + rect.height + 2, // place it 2 pixels below actual tracker
+        fill: "red",
+        width: 5,
+        height: 5,
+      });
+      canvas.add(dummy);
+
+      dummyPixelRects.push(dummy);
     } else {
       rect.fill = "rgba(0,0,0,0)";
     }
