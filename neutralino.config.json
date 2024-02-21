@@ -6,7 +6,7 @@
   "url": "/",
   "enableServer": true,
   "enableNativeAPI": true,
-  "nativeAllowList": ["app.*", "filesystem.readDirectory"],
+  "nativeAllowList": ["app.*", "filesystem.*", "os.*", "window.*", "storage.*"],
   "modes": {
     "window": {
       "title": "Piano Reader",

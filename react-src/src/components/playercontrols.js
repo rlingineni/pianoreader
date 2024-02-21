@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState, useRef } from "react";
+import { getNotesForCurrentFrame } from "../canvas";
 
 const PlayIcon = () => (
   <svg
@@ -58,6 +59,7 @@ export default function VideoPlayerControls(props) {
   useEffect(() => {
     // Everything around if statement
     const onTimeUpdate = () => {
+      getNotesForCurrentFrame();
       setCurrentTime(videoEl.currentTime);
     };
 
@@ -68,11 +70,6 @@ export default function VideoPlayerControls(props) {
       videoEl.removeEventListener("timeupdate", onTimeUpdate);
     };
   }, [videoEl]);
-
-
-  if (!videoEl) {
-    return <></>;
-  }
 
   if (!videoEl) {
     return <></>;

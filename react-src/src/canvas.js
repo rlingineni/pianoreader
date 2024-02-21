@@ -1,16 +1,21 @@
-/* eslint-disable no-undef */
+/*global fabric*/
+
+import { getBlackOrWhite } from "./utils";
 
 let canvas;
 let distanceBetweenKeysUserDefined = 0;
-let trackingPoint1, trackingPoint2, pianoKeys;
+let trackingPoint1, trackingPoint2, pianoKeys, pixelTrackingGroup;
 
 let FkeyWidthOffsetPercent = 0;
 let CkeyWidthOffsetPercent = 0;
 let video1;
 
+let mainCanvas;
+let ctx;
+
 const trackingRectDesign = {
-  left: 25,
-  top: 334,
+  left: 170,
+  top: 400,
   fill: "red",
   width: 4,
   height: 30,
@@ -25,8 +30,22 @@ function getPlayerDetails() {
   return { width: element.offsetWidth, height: element.offsetHeight };
 }
 
+/**
+ * Fixes the rgb pixel value locations due to retina display and scaling
+ *
+ * Read More: https://stackoverflow.com/questions/62804500/html-canvas-elements-getimagedata-doesnt-match-content-of-fabricjs-canvas
+ * @param number rgb between 0 and 255
+ * @returns number
+ */
+function fixPixels(rgb) {
+  return rgb * window.devicePixelRatio;
+}
+
 export function setupCanvas() {
+  mainCanvas = document.getElementById("canvas");
+  ctx = mainCanvas.getContext("2d");
   canvas = new fabric.Canvas("canvas");
+
   const { width, height } = getPlayerDetails();
   canvas.setWidth(width);
   canvas.setHeight(height);
@@ -39,13 +58,23 @@ export function setupCanvas() {
     transparentCorners: true,
   });
 
+  var canvas2dBackend = new fabric.Canvas2dFilterBackend();
+  fabric.filterBackend = canvas2dBackend;
+
+  canvas.on("object:modified", (e) => {
+    console.log("object:modified");
+    console.log(e.target.type);
+  });
+
   addVideoToCanvas();
 }
 
+/**
+ * Adds the video1 element to the canvas
+ */
 function addVideoToCanvas() {
   // create html video element
   const video = document.getElementById("video1");
-  const { width, height } = getPlayerDetails();
 
   video1 = new fabric.Image(video, {
     left: 0,
@@ -77,24 +106,17 @@ function addVideoToCanvas() {
   video1.getElement().pause();
   canvas.sendToBack(video1);
   addTrackingDots();
+  var filter = new fabric.Image.filters.BlackWhite();
+  video1.filters.push(filter);
 
   fabric.util.requestAnimFrame(function render() {
+    // video1.applyFilters();
     canvas.renderAll();
     fabric.util.requestAnimFrame(render);
   });
 
   canvas.backgroundColor = "black";
   video1.opacity = 0.5;
-}
-
-export function removeTrackingDots() {
-  // remove the tracking points
-
-  canvas.remove(trackingPoint1);
-  canvas.remove(trackingPoint2);
-  trackingPoint1 = null;
-  trackingPoint2 = null;
-  canvas.renderAll();
 }
 
 export function addTrackingDots() {
@@ -117,15 +139,29 @@ export function addTrackingDots() {
   trackingPoint2.set({ visible: true });
 }
 
-export function setDistanceBetweenKeys(value) {
+export function removeTrackingDots() {
+  // remove the tracking points
+
+  canvas.remove(trackingPoint1);
+  canvas.remove(trackingPoint2);
+  trackingPoint1 = null;
+  trackingPoint2 = null;
+  canvas.renderAll();
+}
+
+/**
+ * Sets the distance between piano keys
+ * @param {*} value
+ */
+export function setDistanceBetweenTrackingLines(value) {
   // set the distance between keys in pixels
   // between -25 and 25
   removeTrackingLines();
   distanceBetweenKeysUserDefined = value;
-  generateKeyLocations();
+  generateTrackingLines();
 }
 
-export function generateKeyLocations() {
+export function generateTrackingLines() {
   const start = trackingPoint1.left;
 
   const distanceBetweenKeys =
@@ -143,9 +179,9 @@ export function generateKeyLocations() {
   // canvas.remove(trackingPoint2);
   //canvas.remove(trackingPoint1);
 
-  // get the width of the canvas
-  const { width } = canvas;
-  const keyCount = Math.floor(width / keyWidth);
+  // get the width of the video
+  const width = video1.getScaledWidth();
+  const keyCount = Math.floor(width / distanceBetweenKeys);
 
   let currOffset = start;
 
@@ -200,34 +236,46 @@ export function generateKeyLocations() {
   canvas.add(pianoKeys);
 }
 
+/**
+ * Removes tracking lines and any pixel trackers
+ */
 export function removeTrackingLines() {
   for (const key of pianoKeys._objects) {
     canvas.remove(key);
   }
   canvas.remove(pianoKeys);
+
+  if (pixelTrackingGroup) {
+    for (const key of pixelTrackingGroup._objects) {
+      canvas.remove(key);
+    }
+    canvas.remove(pixelTrackingGroup);
+  }
 }
 
 export function adjustCKeyOffset(value) {
   removeTrackingLines();
   CkeyWidthOffsetPercent = value / 100;
-  generateKeyLocations();
+  generateTrackingLines();
 }
 
 export function adjustFKeyOffset(value) {
   removeTrackingLines();
   // get the value of the range
   FkeyWidthOffsetPercent = value / 100;
-  generateKeyLocations();
+  generateTrackingLines();
 }
 
-export function copyKeys() {
+/**
+ *
+ * @returns a template of the keys and their positions from the tracking lines
+ */
+export function getKeyTemplate() {
   const allKeys = [];
   const notes = ["C", "D", "E", "F", "G", "A", "B"];
   const groupCenter = pianoKeys.getPointByOrigin("center", "center");
 
   // get center of video
-
-  const { scaleX } = video1;
 
   const offsetFromVideoEdge = pianoKeys._objects[0].left + groupCenter.x;
   console.log("offsetFromInsideOfVideo", offsetFromVideoEdge);
@@ -239,7 +287,7 @@ export function copyKeys() {
   console.log(start);
 
   const getLeft = (key) => {
-    return key.left + groupCenter.x - distanceToVideoEdge;
+    return key.left + groupCenter.x; // subtract distanceToVideoEdge used to reset the start
   };
 
   pianoKeys._objects.forEach((key, i) => {
@@ -251,12 +299,112 @@ export function copyKeys() {
     });
   });
 
-  console.log(JSON.stringify(allKeys, 0, 2));
+  // console.log(JSON.stringify(allKeys, 0, 2));
 
   // copy allKeys to clipboard
   navigator.clipboard.writeText(JSON.stringify(allKeys));
 
-  console.log(allKeys[0])
+  console.log(allKeys[0]);
 
   return allKeys;
+}
+
+export function placePixelTrackers(pianoKeyTemplate, trackerHeight) {
+  // remove the tracking points
+  removeTrackingLines();
+  canvas.renderAll();
+
+  const trackerWidth = pianoKeyTemplate[0].end - pianoKeyTemplate[0].start;
+  const pixelRowStart = 270 || trackerHeight;
+
+  const width = video1.getScaledWidth();
+
+  let pixelVisualizerDots = [];
+
+  for (const point of pianoKeyTemplate) {
+    if (point.start >= width) {
+      continue;
+    }
+
+    const trackingRectDesign = {
+      left: point.start,
+      top: pixelRowStart,
+      fill: "red",
+      width: trackerWidth,
+      height: trackerWidth,
+    };
+
+    const rect = new fabric.Rect(trackingRectDesign);
+    rect.set("piano-key", point.key);
+    canvas.add(rect);
+    pixelVisualizerDots.push(rect);
+  }
+
+  // draw a row of little 5px tall rectangles on the video to track the keys
+  pixelTrackingGroup = new fabric.Group(pixelVisualizerDots);
+  canvas.add(pixelTrackingGroup);
+  pixelTrackingGroup.selectable = false;
+
+  // set the fill of the pixel tracking group to be transparent
+  const pixelRects = pixelTrackingGroup._objects;
+  for (const rect of pixelRects) {
+    rect.fill = "rgba(0,0,0,0)";
+  }
+  canvas.renderAll();
+
+  getNotesForCurrentFrame();
+}
+
+export function getNotesForCurrentFrame() {
+  if (!pixelTrackingGroup || pixelTrackingGroup._objects.length === 0) return;
+
+  // get all the objects in the pixelTrackingGroup
+  const pixelRects = pixelTrackingGroup._objects;
+
+  const keyValues = [];
+
+  const groupCenter = pixelTrackingGroup.getPointByOrigin("center", "center");
+
+  const getLeft = (rect) => {
+    return rect.left + groupCenter.x;
+  };
+
+  const getTop = (rect) => {
+    return rect.top + groupCenter.y;
+  };
+
+  for (const rect of pixelRects) {
+    const pixels = [];
+    const top = getTop(rect);
+    const left = getLeft(rect);
+    // get the color in a rectangle of pixels
+    for (let i = 0; i < rect.width; i++) {
+      // get the color in a rectangle of pixels
+      for (let j = 0; j < rect.height; j++) {
+        const pixel = ctx.getImageData(
+          ...[left + i, top + j, 1, 1].map(fixPixels)
+        );
+
+        pixels.push({
+          r: pixel.data[0],
+          g: pixel.data[1],
+          b: pixel.data[2],
+          a: pixel.data[3],
+        });
+      }
+    }
+
+    // re-color the rect based on the color of the pixels
+    const color = getBlackOrWhite(pixels);
+
+    const pianoKey = rect.get("piano-key");
+    if (color === "white") {
+      keyValues.push(pianoKey);
+      rect.fill = "blue";
+    } else {
+      rect.fill = "rgba(0,0,0,0)";
+    }
+  }
+
+  console.log(keyValues);
 }

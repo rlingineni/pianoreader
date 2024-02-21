@@ -1,21 +1,28 @@
 import { useEffect, useState } from "react";
 import { ReactComponent as Logo } from "./logo.svg";
 import "./App.css";
-import { loadYoutubeVideo } from "./bgPlayer";
+import { getYoutubeVideoSource } from "./bgPlayer";
 import VideoPlayerControls from "./components/playercontrols";
 import {
-  generateKeyLocations,
+  generateTrackingLines,
   removeTrackingLines,
   removeTrackingDots,
   addTrackingDots,
   adjustCKeyOffset,
   adjustFKeyOffset,
-  copyKeys,
-  setDistanceBetweenKeys,
+  getKeyTemplate,
+  setDistanceBetweenTrackingLines,
+  setupCanvas,
+  placePixelTrackers
 } from "./canvas";
 
 // Import filesystem namespace
-import { filesystem, storage } from "@neutralinojs/lib";
+import { filesystem, storage, os } from "@neutralinojs/lib";
+import {
+  downloadVideoToDisk,
+  readVideoFromDisk,
+  renderCanvasVideoStream,
+} from "./utils";
 
 function App() {
   const [hasLoadedCanvas, setHasLoadedCanvas] = useState(false);
@@ -40,20 +47,28 @@ function App() {
   }, []);
 
   async function loadVideoInBackground() {
-    await loadYoutubeVideo();
+    const { downloadUrl, ext, height, width } = await getYoutubeVideoSource();
+    // await downloadVideoToDisk(downloadUrl, ext);
+    let objUrl = await readVideoFromDisk(width, height);
+    renderCanvasVideoStream(objUrl, width, height);
+    setupCanvas();
     setHasLoadedCanvas(true);
     setCurrentStep(1);
+
+    const canvas = document.getElementById("canvas");
+    const ctx = canvas.getContext("2d");
+    console.log(ctx.getImageData(150, 100, 10, 10));
   }
 
   function generateFullPiano() {
-    generateKeyLocations();
+    generateTrackingLines();
     setCurrentStep(currentStep + 1);
   }
 
   function removeFullPiano() {
     setCkeyOffset(0);
     setFkeyOffset(0);
-    setDistanceBetweenKeys(0);
+    setDistanceBetweenTrackingLines(0);
 
     // adjust in canvas.js
     setKeyDistance(0);
@@ -81,16 +96,18 @@ function App() {
     }
 
     if (key === undefined) {
-      setDistanceBetweenKeys(value);
+      setDistanceBetweenTrackingLines(value);
       setKeyDistance(value);
     }
   }
 
   async function finalizeNotes() {
-    const allValues = copyKeys();
+    const allValues = getKeyTemplate();
 
     // save it to the filesystem
     await storage.setData("YT_ID", JSON.stringify(allValues));
+
+    placePixelTrackers(allValues)
   }
 
   return (
