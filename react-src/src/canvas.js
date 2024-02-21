@@ -253,19 +253,6 @@ export function removeTrackingLines() {
   }
 }
 
-export function adjustCKeyOffset(value) {
-  removeTrackingLines();
-  CkeyWidthOffsetPercent = value / 100;
-  generateTrackingLines();
-}
-
-export function adjustFKeyOffset(value) {
-  removeTrackingLines();
-  // get the value of the range
-  FkeyWidthOffsetPercent = value / 100;
-  generateTrackingLines();
-}
-
 /**
  *
  * @returns a template of the keys and their positions from the tracking lines

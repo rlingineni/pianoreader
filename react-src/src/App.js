@@ -8,12 +8,10 @@ import {
   removeTrackingLines,
   removeTrackingDots,
   addTrackingDots,
-  adjustCKeyOffset,
-  adjustFKeyOffset,
   getKeyTemplate,
   setDistanceBetweenTrackingLines,
   setupCanvas,
-  placePixelTrackers
+  placePixelTrackers,
 } from "./canvas";
 
 // Import filesystem namespace
@@ -29,8 +27,7 @@ function App() {
   const [currentStep, setCurrentStep] = useState(0);
 
   const [keyDistance, setKeyDistance] = useState(0);
-  const [CkeyOffset, setCkeyOffset] = useState(0);
-  const [FkeyOffset, setFkeyOffset] = useState(0);
+  const [rowHeight, setRowHeight] = useState(0);
 
   // Log current directory or error after component is mounted
   useEffect(() => {
@@ -66,14 +63,10 @@ function App() {
   }
 
   function removeFullPiano() {
-    setCkeyOffset(0);
-    setFkeyOffset(0);
     setDistanceBetweenTrackingLines(0);
 
     // adjust in canvas.js
     setKeyDistance(0);
-    adjustCKeyOffset(0);
-    adjustFKeyOffset(0);
 
     removeTrackingLines();
     addTrackingDots();
@@ -86,15 +79,6 @@ function App() {
   }
 
   function adjustKeyOffset(key, value) {
-    if (key === "C") {
-      setCkeyOffset(value);
-      adjustCKeyOffset(value);
-    }
-    if (key === "F") {
-      setFkeyOffset(value);
-      adjustFKeyOffset(value);
-    }
-
     if (key === undefined) {
       setDistanceBetweenTrackingLines(value);
       setKeyDistance(value);
@@ -107,7 +91,7 @@ function App() {
     // save it to the filesystem
     await storage.setData("YT_ID", JSON.stringify(allValues));
 
-    placePixelTrackers(allValues)
+    placePixelTrackers(allValues);
   }
 
   return (
@@ -135,6 +119,7 @@ function App() {
         {currentStep === 2 && (
           <p>Adjust the slider till the keys match the piano keys</p>
         )}
+
         <div className="relative">
           <div
             id="player"
@@ -188,45 +173,6 @@ function App() {
                     </p>
                   </span>
                 </div>
-                {/*<div className="w-48">
-                  <label
-                    for="CkeyOffset"
-                    class="block mb-1 text-sm font-medium text-gray-900"
-                  >
-                    <span className="text-red-700 text-bold">C</span> Key Offset
-                  </label>
-                  <span className="flex items-center gap-2">
-                    <input
-                      type="range"
-                      value={CkeyOffset}
-                      onChange={(e) => {
-                        adjustKeyOffset("C", e.target.value);
-                      }}
-                      className="w-32 h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer dark:bg-gray-700"
-                    />
-                    <p gap="2">{CkeyOffset.toString().padStart(2, "0")}</p>
-                  </span>
-                </div>
-                <div>
-                  <label
-                    for="FkeyOffset"
-                    class="block mb-1 text-sm font-medium text-gray-900"
-                  >
-                    <span className="text-green-700 text-bold">F</span> Key
-                    Offset
-                  </label>
-                  <span className="flex items-center gap-2">
-                    <input
-                      type="range"
-                      value={FkeyOffset}
-                      onChange={(e) => {
-                        adjustKeyOffset("F", e.target.value);
-                      }}
-                      className="w-32 h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer dark:bg-gray-700"
-                    />
-                    <p gap="2">{FkeyOffset.toString().padStart(2, "0")}</p>
-                  </span>
-                    </div>*/}
               </div>
               <div className="flex gap-4">
                 <button
