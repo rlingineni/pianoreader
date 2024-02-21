@@ -59,6 +59,7 @@ export function renderCanvasVideoStream(src, width, height) {
   video.src = src;
   video.autoplay = false;
   video.currentTime = 5;
+  video.playbackRate = .1;
   video.height = height;
   video.width = width;
   video.pause();
