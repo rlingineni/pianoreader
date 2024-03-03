@@ -1,0 +1,6 @@
+{
+  "dependencies": {
+    "@tonaljs/chord-detect": "^4.8.5",
+    "ytdl-core": "^4.11.5"
+  }
+}

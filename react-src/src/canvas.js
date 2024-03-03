@@ -61,11 +61,6 @@ export function setupCanvas() {
   var canvas2dBackend = new fabric.Canvas2dFilterBackend();
   fabric.filterBackend = canvas2dBackend;
 
-  canvas.on("object:modified", (e) => {
-    console.log("object:modified");
-    console.log(e.target.type);
-  });
-
   addVideoToCanvas();
 }
 
@@ -334,12 +329,12 @@ export function placePixelTrackers(pianoKeyTemplate, trackerRowStart) {
   }
   canvas.renderAll();
 
-  getNotesForCurrentFrame(true);
+  getNotesForCurrentFrame();
 }
 
 const dummyPixelRects = [];
 
-export function getNotesForCurrentFrame(highlight) {
+export function getNotesForCurrentFrame() {
   if (!pixelTrackingGroup || pixelTrackingGroup._objects.length === 0) return;
 
   // remove the dummy pixel rects
@@ -410,4 +405,5 @@ export function getNotesForCurrentFrame(highlight) {
   }
 
   console.log(keyValues);
+  return keyValues;
 }

@@ -35,11 +35,41 @@ const PauseIcon = () => (
   </svg>
 );
 
+const ForwardIcon = () => (
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    viewBox="0 0 24 24"
+    fill="currentColor"
+    class="w-6 h-6"
+  >
+    <path
+      fill-rule="evenodd"
+      d="M16.28 11.47a.75.75 0 0 1 0 1.06l-7.5 7.5a.75.75 0 0 1-1.06-1.06L14.69 12 7.72 5.03a.75.75 0 0 1 1.06-1.06l7.5 7.5Z"
+      clip-rule="evenodd"
+    />
+  </svg>
+);
+
+const BackwardIcon = () => (
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    viewBox="0 0 24 24"
+    fill="currentColor"
+    class="w-6 h-6"
+  >
+    <path
+      fill-rule="evenodd"
+      d="M7.72 12.53a.75.75 0 0 1 0-1.06l7.5-7.5a.75.75 0 1 1 1.06 1.06L9.31 12l6.97 6.97a.75.75 0 1 1-1.06 1.06l-7.5-7.5Z"
+      clip-rule="evenodd"
+    />
+  </svg>
+);
+
 /**
  *
  * @param {{
  * type: "option1" | "option2" | "option3"
- * onTick: function
+ * onTimeUpdate: function
  * videoId: string,
  * onPlaybackToggle: function,
  * }} props Props for the component
@@ -60,7 +90,7 @@ export default function VideoPlayerControls(props) {
   useEffect(() => {
     // Everything around if statement
     const onTimeUpdate = () => {
-      getNotesForCurrentFrame();
+      onTimeUpdate(videoEl.currentTime);
       setCurrentTime(videoEl.currentTime);
     };
 
@@ -83,12 +113,22 @@ export default function VideoPlayerControls(props) {
 
   const scrubberValue = ((currentTime + 0.25) / duration) * 100;
 
+  const onSeekForward = () => {
+    videoEl.currentTime += 2;
+    setCurrentTime(videoEl.currentTime);
+  };
+
+  const onSeekBackward = () => {
+    videoEl.currentTime -= 2;
+    setCurrentTime(videoEl.currentTime);
+  };
+
   return (
     <div className="flex gap-2 items-center">
-      <div>
+      <div className="flex gap-1">
         <button
           id="playPause"
-          class="bg-gray-200 hover:bg-gray-400 p-1"
+          className="bg-gray-200 hover:bg-gray-400 p-1"
           onClick={() => {
             setIsPlaying(!isPlaying);
             if (!isPlaying) {
@@ -103,8 +143,20 @@ export default function VideoPlayerControls(props) {
         >
           {!isPlaying ? <PauseIcon /> : <PlayIcon />}
         </button>
+        <button
+          className="bg-gray-200 hover:bg-gray-400 p-1"
+          onClick={onSeekBackward}
+        >
+          <BackwardIcon />
+        </button>
+        <button
+          className="bg-gray-200 hover:bg-gray-400 p-1"
+          onClick={onSeekForward}
+        >
+          <ForwardIcon />
+        </button>
       </div>
-      <div className="w-full flex gap-2 items-center mb-1">
+      <div className="w-full flex gap-2 items-center ">
         <input
           id="scrubber"
           type="range"

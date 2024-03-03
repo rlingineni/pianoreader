@@ -12,13 +12,17 @@ export const downloadVideoToDisk = async (url, ext) => {
 
 // read video as obj url
 export const readVideoFromDisk = async () => {
+
   // read the file from the filesystem
   const data = await filesystem.readBinaryFile("video.mp4");
+  console.log(data);
   let view = new Uint8Array(data);
+
   // use the array buffer to create a blob
   const blob = new Blob([view], { type: "video/mp4" });
   // set the blog as a video src
   const objUrl = URL.createObjectURL(blob);
+
   return objUrl;
 };
 
