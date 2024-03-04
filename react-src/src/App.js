@@ -1,8 +1,7 @@
-import { useEffect, useState } from "react";
+import { useCallback, useState } from "react";
 import { ReactComponent as Logo } from "./logo.svg";
 import { ReactComponent as RefreshIcon } from "./refresh.svg";
 import "./App.css";
-import { getYoutubeVideoSource } from "./bgPlayer";
 import VideoPlayerControls from "./components/playercontrols";
 import Loader from "./components/loader";
 import {
@@ -15,19 +14,17 @@ import {
   setupCanvas,
   placePixelTrackers,
   getNotesForCurrentFrame,
+  setDetectionMode,
+  getDectionMode,
 } from "./canvas";
 
 // Import filesystem namespace
-import { filesystem, storage, os } from "@neutralinojs/lib";
-import {
-  downloadVideoToDisk,
-  readVideoFromDisk,
-  renderCanvasVideoStream,
-} from "./utils";
+import { renderCanvasVideoStream } from "./utils";
 import { NotesViewer } from "./components/notesviewer";
+import SelectList from "./components/selectlist";
 
 function App() {
-  const [canvasState, setCanvasState] = useState("fetching"); // fetching, downloading, done, error
+  const [canvasState, setCanvasState] = useState("info"); // fetching, downloading, done, error
 
   const [currentStep, setCurrentStep] = useState(0);
   const [videoId, setVideoId] = useState("2GrzF9nnkxk");
@@ -38,37 +35,18 @@ function App() {
   const [keyDistance, setKeyDistance] = useState(0);
   const [trackerRowHeight, setTrackerRowHeight] = useState(270);
 
-  // Log current directory or error after component is mounted
-  useEffect(() => {
-    loadVideoInBackground(videoId);
-  }, [videoId]);
-
-  function loadYoutubeUrl(url) {
-    function validateYoutubeURL(url) {
-      const validDomains = ["youtube.com", "youtu.be"];
-      const domain = new URL(url).hostname;
-      return validDomains.includes(domain);
-    }
-
-    if (validateYoutubeURL(url)) {
-      const urlParams = new URLSearchParams(new URL(url).search);
-      // set this as the id
-      setVideoId(urlParams.get("v"));
-    }
-  }
-
-  async function loadVideoInBackground(id) {
-    console.log(id);
+  async function loadVideoFromFile(src) {
+    // contents of this function should not change (since it's intialized in setupCanvas)
+    const onAnimFrame = async () => {
+      const notes = getNotesForCurrentFrame();
+      if (notes && notes.length > 0) {
+        setVisibleNotes(notes);
+      }
+    };
 
     try {
-      const { height, width } = await getYoutubeVideoSource(id);
-
-      // setCanvasState('downloading');
-      // await downloadVideoToDisk(downloadUrl, ext);
-
-      let objUrl = await readVideoFromDisk(width, height);
-      renderCanvasVideoStream(objUrl, width, height);
-      setupCanvas();
+      renderCanvasVideoStream(src, 1280, 720);
+      setupCanvas(onAnimFrame);
       setCanvasState("done");
       setCurrentStep(1);
 
@@ -83,7 +61,6 @@ function App() {
 
   function generateFullPiano() {
     generateTrackingLines();
-    setCurrentStep(currentStep + 1);
   }
 
   function removeFullPiano() {
@@ -112,9 +89,6 @@ function App() {
   async function finalizeNotes() {
     const allValues = getKeyTemplate();
 
-    // save it to the filesystem
-    await storage.setData("YT_ID", JSON.stringify(allValues));
-
     placePixelTrackers(allValues, trackerRowHeight);
     setCurrentStep(currentStep + 1);
   }
@@ -126,8 +100,23 @@ function App() {
 
   function getLoaderText() {
     switch (canvasState) {
+      case "info":
+        return (
+          <div className="text-center">
+            <p className="mb-2"> Load a Piano Tutorial to Begin </p>
+            <button
+              onClick={() => {
+                loadVideoFromFile("./video.mp4");
+              }}
+            >
+              <p className="underline text-indigo-600 text-sm">
+                Try demo video
+              </p>
+            </button>
+          </div>
+        );
       case "fetching":
-        return "Fetching Video from Youtube";
+        return "fetching video from youtube";
       case "downloading":
         return "Downloading Video";
       case "done":
@@ -143,16 +132,24 @@ function App() {
     <div className="px-12 h-full py-4">
       <div className="flex flex-col gap-1">
         <div className="flex gap-2 items-center w-full">
-          <Logo className="h-12 w-24 mb-2" />
+          <Logo className="h-12 w-24 mb-3 mr-6" />
           <div className="flex w-full items-center gap-2 ">
             <input
+              type="file"
+              accept="video/mp4, video/mov"
               onChange={(e) => {
-                loadYoutubeUrl(e.target.value);
+                if (e.target.files.length > 0) {
+                  setCanvasState("downloading");
+                  loadVideoFromFile(URL.createObjectURL(e.target.files[0]));
+                }
               }}
-              className="p-2 h-8 border-2 rounded-md w-full h-24 mt-1"
-              placeholder="https://youtuu.be/2GrzF9nnkxk"
+              className="block w-full text-sm text-slate-500 border border-gray-200 rounded-md
+        file:mr-4 file:py-1 file:px-4 file:rounded-md
+        file:border-0 file:text-sm file:font-semibold
+        file:bg-indigo-50 file:text-indigo-700
+        hover:file:bg-indigo-100 file:cursor-pointer"
             />
-            <input type='file' />
+
             <button
               onClick={() => {
                 window.location.reload();
@@ -166,7 +163,7 @@ function App() {
         <div className="relative">
           <div
             id="player"
-            className="border-1 w-full rounded-sm"
+            className="border border-gray-400 w-full rounded-sm "
             style={{ height: "450px" }}
           >
             {canvasState !== "done" && (
@@ -179,7 +176,7 @@ function App() {
         </div>
 
         <div class="mt-4">
-          {currentStep === 10 && (
+          {currentStep === 1 && (
             <div>
               <span className="flex gap-4">
                 <p>
@@ -194,7 +191,10 @@ function App() {
                 <button
                   id="togglePlayback"
                   class="px-4 rounded-md h-8 bg-indigo-500 text-white"
-                  onClick={generateFullPiano}
+                  onClick={() => {
+                    generateFullPiano();
+                    setCurrentStep(currentStep + 1);
+                  }}
                 >
                   Generate Full Piano
                 </button>
@@ -210,7 +210,7 @@ function App() {
 
           {currentStep === 2 && (
             <div>
-              <p className="mb-2 text-sm">
+              <p className="mb-4 text-sm">
                 Adjust the slider till the keys match the piano keys
               </p>
               <div class="flex items-end justify-between">
@@ -241,7 +241,7 @@ function App() {
                     class="px-4 rounded-md h-8 border-2 text-gray-700 mb-1"
                     onClick={removeFullPiano}
                   >
-                    Adjust Tracking Points
+                    Adjust Points
                   </button>
                   <button
                     id="togglePlayback"
@@ -256,37 +256,57 @@ function App() {
           )}
 
           {currentStep === 3 && (
-            <div class="flex items-end justify-between">
-              <div className="flex gap-2 items-center">
-                {/* <div className="w-48">
-                  <label class="block mb-1 text-sm font-medium text-gray-900">
-                    Detection Strategy
-                  </label>
-                  <span className="flex items-center gap-2">
-                    <input type="checkbox" value={true} />
-                    <p className="text-sm">Light Spots</p>
-                  </span>
-                </div> */}
-                <div className="w-48 mt-1">
-                  <label class="block mb-1 text-sm font-medium text-gray-900">
-                    Tracker Height
-                  </label>
-                  <span className="flex items-center gap-2">
-                    <input
-                      type="range"
-                      min="0"
-                      max="450"
-                      value={trackerRowHeight}
-                      onChange={(e) =>
-                        onTrackerRowHeightChange(parseInt(e.target.value))
+            <div>
+              <p className="mb-4 text-sm flex items-center">
+                Adjust the trackers <div className="mx-2 w-2 h-2 bg-red-500" />
+                height to light up with the notes
+              </p>
+              <div class="flex items-end justify-between">
+                <div className="flex gap-2 items-center">
+                  <div className="w-48 mt-1">
+                    <label class="block mb-2 text-sm font-medium text-gray-900">
+                      Tracker Height
+                    </label>
+                    <span className="flex items-center gap-2">
+                      <input
+                        type="range"
+                        min="0"
+                        max="450"
+                        value={trackerRowHeight}
+                        onChange={(e) =>
+                          onTrackerRowHeightChange(parseInt(e.target.value))
+                        }
+                        className="w-32 h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer dark:bg-gray-700"
+                      />
+                      <p gap="2">
+                        {trackerRowHeight.toString().padStart(2, "0")}
+                      </p>
+                    </span>
+                  </div>
+                  <div className="w-48 mt-1">
+                    <label class="block mb-1 text-sm font-medium text-gray-900">
+                      Light up on:
+                    </label>
+                    <SelectList
+                      options={["light areas", "dark areas"]}
+                      selectedValue={
+                        getDectionMode() === "white"
+                          ? "light areas"
+                          : "dark areas"
                       }
-                      className="w-32 h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer dark:bg-gray-700"
+                      onChange={setDetectionMode}
                     />
-                    <p gap="2">
-                      {trackerRowHeight.toString().padStart(2, "0")}
-                    </p>
-                  </span>
+                  </div>
                 </div>
+                <button
+                  class="px-4 rounded-md h-8 border-2 text-gray-700 mb-1"
+                  onClick={() => {
+                    generateFullPiano();
+                    setCurrentStep(currentStep - 1);
+                  }}
+                >
+                  Adjust Piano
+                </button>
               </div>
             </div>
           )}
@@ -295,23 +315,12 @@ function App() {
 
           <div className="my-4">
             {canvasState === "done" && (
-              <VideoPlayerControls
-                videoId="video1"
-                onTimeUpdate={() => {
-                  setVisibleNotes(getNotesForCurrentFrame());
-                }}
-              />
+              <VideoPlayerControls videoId="video1" onTimeUpdate={() => {}} />
             )}
           </div>
           {currentStep === 3 && (
             <div className="flex justify-center w-full relative">
-              <div className="absolute left-0">{detectedChord}</div>
-              <NotesViewer
-                notes={visibleNotes}
-                onChordDetected={(c) => {
-                  setDetectedChord(c);
-                }}
-              />
+              <NotesViewer notes={visibleNotes} onChordDetected={(c) => {}} />
             </div>
           )}
         </div>

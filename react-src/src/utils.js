@@ -12,7 +12,6 @@ export const downloadVideoToDisk = async (url, ext) => {
 
 // read video as obj url
 export const readVideoFromDisk = async () => {
-
   // read the file from the filesystem
   const data = await filesystem.readBinaryFile("video.mp4");
   console.log(data);
@@ -58,12 +57,18 @@ export function getBlackOrWhite(pixels) {
 
 // render an invisible video element so we can send to the canvas
 export function renderCanvasVideoStream(src, width, height) {
+  // if the video element already exists, remove it
+  var existingEl = document.getElementById("video1");
+  if (existingEl) {
+    existingEl.parentNode.removeChild(video);
+  }
+
   var video = document.createElement("video");
   video.id = "video1";
   video.src = src;
   video.autoplay = false;
   video.currentTime = 5;
-  video.playbackRate = .1;
+  video.playbackRate = 1;
   video.height = height;
   video.width = width;
   video.pause();

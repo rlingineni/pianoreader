@@ -10,6 +10,8 @@ let FkeyWidthOffsetPercent = 0;
 let CkeyWidthOffsetPercent = 0;
 let video1;
 
+let detectionMode = "white";
+
 let mainCanvas;
 let ctx;
 
@@ -41,9 +43,14 @@ function fixPixels(rgb) {
   return rgb * window.devicePixelRatio;
 }
 
-export function setupCanvas() {
+export function setupCanvas(onAnimFrame) {
+  if (canvas) {
+    console.log("Canvas already setup");
+    return;
+  }
+
   mainCanvas = document.getElementById("canvas");
-  ctx = mainCanvas.getContext("2d");
+  ctx = mainCanvas.getContext("2d", { willReadFrequently: true });
   canvas = new fabric.Canvas("canvas");
 
   const { width, height } = getPlayerDetails();
@@ -61,13 +68,13 @@ export function setupCanvas() {
   var canvas2dBackend = new fabric.Canvas2dFilterBackend();
   fabric.filterBackend = canvas2dBackend;
 
-  addVideoToCanvas();
+  addVideoToCanvas(onAnimFrame);
 }
 
 /**
  * Adds the video1 element to the canvas
  */
-function addVideoToCanvas() {
+function addVideoToCanvas(onAnimFrame) {
   // create html video element
   const video = document.getElementById("video1");
 
@@ -104,14 +111,24 @@ function addVideoToCanvas() {
   var filter = new fabric.Image.filters.BlackWhite();
   video1.filters.push(filter);
 
+  const isVideoPlaying = (video) =>
+    !!(
+      video.currentTime > 0 &&
+      !video.paused &&
+      !video.ended &&
+      video.readyState > 2
+    );
+
   fabric.util.requestAnimFrame(function render() {
-    // video1.applyFilters();
+    if (isVideoPlaying(video1.getElement())) {
+      if (onAnimFrame) onAnimFrame();
+    }
+    
     canvas.renderAll();
     fabric.util.requestAnimFrame(render);
   });
 
   canvas.backgroundColor = "black";
-  video1.opacity = 0.5;
 }
 
 export function addTrackingDots() {
@@ -279,7 +296,7 @@ export function getKeyTemplate() {
   // console.log(JSON.stringify(allKeys, 0, 2));
 
   // copy allKeys to clipboard
-  navigator.clipboard.writeText(JSON.stringify(allKeys));
+  // navigator.clipboard.writeText(JSON.stringify(allKeys));
 
   // console.log(allKeys[0]);
 
@@ -294,7 +311,7 @@ export function placePixelTrackers(pianoKeyTemplate, trackerRowStart) {
   const trackerWidth = pianoKeyTemplate[0].end - pianoKeyTemplate[0].start;
   const pixelRowStart = trackerRowStart || 270;
 
-  const width = video1.getScaledWidth();
+  const width = video1.width;
 
   let pixelVisualizerDots = [];
 
@@ -333,6 +350,19 @@ export function placePixelTrackers(pianoKeyTemplate, trackerRowStart) {
 }
 
 const dummyPixelRects = [];
+
+export function setDetectionMode(mode) {
+  if (mode.includes("light")) {
+    detectionMode = "white";
+  }
+  if (mode.includes("dark")) {
+    detectionMode = "black";
+  }
+}
+
+export function getDectionMode() {
+  return detectionMode;
+}
 
 export function getNotesForCurrentFrame() {
   if (!pixelTrackingGroup || pixelTrackingGroup._objects.length === 0) return;
@@ -385,13 +415,13 @@ export function getNotesForCurrentFrame() {
     const color = getBlackOrWhite(pixels);
 
     const pianoKey = rect.get("piano-key");
-    if (color === "white") {
+    if (color === detectionMode) {
       keyValues.push(pianoKey);
 
       // create a rectangle 5 pixels above
       const dummy = new fabric.Rect({
         left: left,
-        top: top + rect.height + 2, // place it 2 pixels below actual tracker
+        top: top + rect.height + 2, // draw dot 2 pixels below actual tracker (so we don't pick up red visualizer dots)
         fill: "red",
         width: 5,
         height: 5,

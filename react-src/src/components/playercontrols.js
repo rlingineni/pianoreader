@@ -1,5 +1,4 @@
-import { useCallback, useEffect, useState, useRef } from "react";
-import { getNotesForCurrentFrame } from "../canvas";
+import { useEffect, useState, useRef } from "react";
 
 const PlayIcon = () => (
   <svg
@@ -78,7 +77,7 @@ const BackwardIcon = () => (
 export default function VideoPlayerControls(props) {
   // add a video scrubber with seek controls and play pause button
 
-  const { videoId } = props;
+  const { videoId, onTimeUpdate } = props;
 
   const videoRef = useRef(document.getElementById(videoId));
   const videoEl = videoRef.current;
@@ -88,17 +87,20 @@ export default function VideoPlayerControls(props) {
   const [isPlaying, setIsPlaying] = useState(false);
 
   useEffect(() => {
+    onTimeUpdate(currentTime);
+  }, [onTimeUpdate, currentTime]);
+
+  useEffect(() => {
     // Everything around if statement
-    const onTimeUpdate = () => {
-      onTimeUpdate(videoEl.currentTime);
+    const onUpdate = () => {
       setCurrentTime(videoEl.currentTime);
     };
 
-    videoEl.addEventListener("timeupdate", onTimeUpdate);
+    videoEl.addEventListener("timeupdate", onUpdate);
     setCurrentTime(videoEl.currentTime);
 
     return () => {
-      videoEl.removeEventListener("timeupdate", onTimeUpdate);
+      videoEl.removeEventListener("timeupdate", onUpdate);
     };
   }, [videoEl]);
 
