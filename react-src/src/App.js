@@ -30,10 +30,9 @@ function App() {
   const [videoId, setVideoId] = useState("2GrzF9nnkxk");
 
   const [visibleNotes, setVisibleNotes] = useState([]);
-  const [detectedChord, setDetectedChord] = useState("");
 
   const [keyDistance, setKeyDistance] = useState(0);
-  const [trackerRowHeight, setTrackerRowHeight] = useState(270);
+  const [trackerRowHeight, setTrackerRowHeight] = useState(400);
 
   async function loadVideoFromFile(src) {
     // contents of this function should not change (since it's intialized in setupCanvas)
@@ -320,7 +319,7 @@ function App() {
           </div>
           {currentStep === 3 && (
             <div className="flex justify-center w-full relative">
-              <NotesViewer notes={visibleNotes} onChordDetected={(c) => {}} />
+              <NotesViewer notes={visibleNotes} videoId="video1" />
             </div>
           )}
         </div>

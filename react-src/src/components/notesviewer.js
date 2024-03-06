@@ -1,9 +1,15 @@
 import { detect } from "@tonaljs/chord-detect";
-import { useState } from "react";
+import { ScrollSync, ScrollSyncPane } from "react-scroll-sync";
+
+import { useState, useEffect, useRef } from "react";
 
 // create random array of pressed octaves and notes
 
 const validNotes = ["A", "B", "C", "D", "E", "F", "G"];
+
+// convert seconds to MM:SS
+const minuteSeconds = (currentTime) =>
+  new Date(currentTime * 1000).toISOString().substr(11, 8);
 
 function getOctaveGroups(notes) {
   const octaveGroups = {};
@@ -32,61 +38,132 @@ function addBlankOctaveGroups(octaveGroups) {
   return octaveGroups;
 }
 
-const history = [];
+export const NotesViewer = ({ notes, videoId }) => {
+  const [history, setHistory] = useState([]);
+  const [dedupeEnabled, setDedupeEnabled] = useState(false);
 
-export const NotesViewer = ({ onChordDetected, notes }) => {
-  const octaveGroups = addBlankOctaveGroups(getOctaveGroups(notes));
-  let [detectedChord, setDetectedChord] = useState("");
+  const videoRef = useRef(document.getElementById(videoId));
 
-  const flat = [];
-  for (const key of Object.keys(octaveGroups)) {
-    flat.push(octaveGroups[key]);
-  }
-
-  let value = "";
-  const spacing = "|";
-  for (let i = 0; i < Object.keys(octaveGroups).length; i++) {
-    // look at all the notes
-    value += flat[i].join("");
-
-    if (i !== octaveGroups.length - 1) {
-      value += spacing;
+  useEffect(() => {
+    const videoEl = videoRef.current;
+    const flat = [];
+    const octaveGroups = addBlankOctaveGroups(getOctaveGroups(notes));
+    let detectedChord = "";
+    for (const key of Object.keys(octaveGroups)) {
+      flat.push(octaveGroups[key]);
     }
-  }
 
-  const chord = detect([flat[0], flat[1], flat[2], flat[3]].flat());
-  if (chord) {
-    onChordDetected(chord);
-    detectedChord = chord;
-  }
+    let value = "";
+    const spacing = "|";
+    for (let i = 0; i < Object.keys(octaveGroups).length; i++) {
+      // look at all the notes
+      value += flat[i].join("");
 
-  history.push(
-    (detectedChord ? detectedChord.toString() : " ").padEnd(20) +
-      spacing +
-      value +
-      "\n"
-  );
-  const txtArea = document.getElementById("historyView");
-  if (txtArea) {
-    txtArea.scrollTop = txtArea.scrollHeight + 10;
-  }
+      if (i !== octaveGroups.length - 1) {
+        value += spacing;
+      }
+    }
 
+    const chord = detect([flat[0], flat[1], flat[2], flat[3]].flat());
+    if (chord) {
+      detectedChord = chord;
+    }
+    const row = [
+      (detectedChord ? detectedChord.toString() : " ").padEnd(20) +
+        spacing +
+        value +
+        "\n",
+    ];
+
+    if (dedupeEnabled && history[0].row === row) {
+      // skip entry
+    } else {
+      setHistory((h) => [{ row, time: videoEl.currentTime }].concat(h));
+    }
+  }, [notes, videoRef, dedupeEnabled]);
+
+  // remove duplicate rows that are next to each other
+  const dedupeRows = (rows) => {
+    const deduped = [];
+    for (let i = 0; i < rows.length; i++) {
+      if (i === 0) {
+        deduped.push(rows[i]);
+      } else {
+        if (rows[i].row !== rows[i - 1].row) {
+          deduped.push(rows[i]);
+        }
+      }
+    }
+    return deduped;
+  };
+
+  const rowData = dedupeEnabled ? dedupeRows(history) : history;
+
+  const lines = rowData.map((r) => r.row).join("");
 
   return (
-    <div className="w-full">
-      <button className="underline" onClick={()=>{
-        history.length = 0;
-        if(txtArea){
-          txtArea.value = "";
-        }
-      }}>clear</button>
-      <textarea
-        id="historyView"
-        rows="20" 
-        className="font-mono w-full border border-gray-200 rounded-md mb-10 text-xs"
-        readOnly
-        value={history.join("")}
-      />
-    </div>
+    <ScrollSync>
+      <div className="w-full">
+        <div className="flex gap-6 mb-2">
+          {/* <div className="flex items-center">
+            <input
+              type="checkbox"
+              onChange={(e) => {
+                setDedupeEnabled(e.target.checked);
+              }}
+            />
+            <label className="ml-2">de-dupe</label>
+          </div> */}
+          <button
+            className="underline"
+            onClick={() => {
+              setHistory([]);
+            }}
+          >
+            clear
+          </button>
+        </div>
+        <div
+          className="flex border border-gray-200 rounded-md"
+          style={{ height: "300px" }}
+        >
+          <ScrollSyncPane>
+            <div
+              className="px-4 py-2 bg-gray-200 rounded-l-md overflow-y-auto mr-1"
+              style={{ height: "300px" }}
+            >
+              {rowData.map((r) => (
+                <p
+                  className="text-xs font-mono"
+                  role="button"
+                  onClick={() => {
+                    if (videoRef.current) {
+                      videoRef.current.currentTime = r.time - 2;
+                      if (videoRef.current.paused) {
+                        videoRef.current.play();
+                        // play for 3s
+                        setTimeout(() => {
+                          videoRef.current.pause();
+                        }, 3000);
+                      }
+                    }
+                  }}
+                >
+                  {minuteSeconds(r.time)}
+                </p>
+              ))}
+            </div>
+          </ScrollSyncPane>
+          <ScrollSyncPane>
+            <textarea
+              id="historyView"
+              className="font-mono w-full h-full mb-10 py-2 text-xs rounded-r-md"
+              readOnly
+              value={lines}
+            />
+          </ScrollSyncPane>
+        </div>
+      </div>
+    </ScrollSync>
   );
 };

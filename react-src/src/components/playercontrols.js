@@ -99,6 +99,14 @@ export default function VideoPlayerControls(props) {
     videoEl.addEventListener("timeupdate", onUpdate);
     setCurrentTime(videoEl.currentTime);
 
+    videoEl.addEventListener('play',()=>{
+      setIsPlaying(true);
+    })
+
+    videoEl.addEventListener('pause',()=>{
+      setIsPlaying(false);
+    })
+
     return () => {
       videoEl.removeEventListener("timeupdate", onUpdate);
     };

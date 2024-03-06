@@ -10,7 +10,7 @@ let FkeyWidthOffsetPercent = 0;
 let CkeyWidthOffsetPercent = 0;
 let video1;
 
-let detectionMode = "white";
+let detectionColor = "black";
 
 let mainCanvas;
 let ctx;
@@ -353,15 +353,15 @@ const dummyPixelRects = [];
 
 export function setDetectionMode(mode) {
   if (mode.includes("light")) {
-    detectionMode = "white";
+    detectionColor = "white";
   }
   if (mode.includes("dark")) {
-    detectionMode = "black";
+    detectionColor = "black";
   }
 }
 
 export function getDectionMode() {
-  return detectionMode;
+  return detectionColor;
 }
 
 export function getNotesForCurrentFrame() {
@@ -415,7 +415,7 @@ export function getNotesForCurrentFrame() {
     const color = getBlackOrWhite(pixels);
 
     const pianoKey = rect.get("piano-key");
-    if (color === detectionMode) {
+    if (color === detectionColor) {
       keyValues.push(pianoKey);
 
       // create a rectangle 5 pixels above
@@ -434,6 +434,5 @@ export function getNotesForCurrentFrame() {
     }
   }
 
-  console.log(keyValues);
   return keyValues;
 }
