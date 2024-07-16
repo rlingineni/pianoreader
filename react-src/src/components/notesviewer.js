@@ -138,6 +138,7 @@ export const NotesViewer = ({ notes, videoId }) => {
                   role="button"
                   onClick={() => {
                     if (videoRef.current) {
+                      setHistory([]);
                       videoRef.current.currentTime = r.time - 2;
                       if (videoRef.current.paused) {
                         videoRef.current.play();
