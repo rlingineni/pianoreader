@@ -2,6 +2,7 @@ import { useCallback, useState } from "react";
 import { ReactComponent as Logo } from "./logo.svg";
 import { ReactComponent as RefreshIcon } from "./refresh.svg";
 import "./App.css";
+import "./tailwind.css";
 import VideoPlayerControls from "./components/playercontrols";
 import Loader from "./components/loader";
 import {
@@ -22,6 +23,7 @@ import {
 import { renderCanvasVideoStream } from "./utils";
 import { NotesViewer } from "./components/notesviewer";
 import SelectList from "./components/selectlist";
+import { validateYoutubeUrl, downloadYoutubeVideo } from "./bgPlayer";
 
 function App() {
   const [canvasState, setCanvasState] = useState("info"); // fetching, downloading, done, error
@@ -115,7 +117,7 @@ function App() {
           </div>
         );
       case "fetching":
-        return "fetching video from youtube";
+        return "Fetching video from youtube";
       case "downloading":
         return "Downloading Video";
       case "done":
@@ -134,6 +136,21 @@ function App() {
           <Logo className="h-12 w-24 mb-3 mr-6" />
           <div className="flex w-full items-center gap-2 ">
             <input
+              type="text"
+              placeholder="paste a youtube url"
+              onBlur={async (e) => {
+                const validId = validateYoutubeUrl(e.target.value);
+
+                // not the same video
+                if (videoId !== validId) {
+                  setCanvasState("fetching");
+                  const src = await downloadYoutubeVideo(validId);
+                  loadVideoFromFile(src);
+                }
+              }}
+              className="w-4/5 rounded-md border border-gray-200 py-1 px-2 text-sm text-gray-500"
+            />
+            <input
               type="file"
               accept="video/mp4, video/mov"
               onChange={(e) => {
@@ -142,20 +159,12 @@ function App() {
                   loadVideoFromFile(URL.createObjectURL(e.target.files[0]));
                 }
               }}
-              className="block w-full text-sm text-slate-500 border border-gray-200 rounded-md
+              className="block  text-sm text-slate-500 border border-gray-200 rounded-md
         file:mr-4 file:py-1 file:px-4 file:rounded-md
         file:border-0 file:text-sm file:font-semibold
         file:bg-indigo-50 file:text-indigo-700
         hover:file:bg-indigo-100 file:cursor-pointer"
             />
-
-            <button
-              onClick={() => {
-                window.location.reload();
-              }}
-            >
-              <RefreshIcon className="h-4 w-4" />
-            </button>
           </div>
         </div>
 
