@@ -155,6 +155,7 @@ export const NotesViewer = ({ notes, videoId, onTimeClick }) => {
                   onClick={() => {
                     // when clicked on a row, jump to that time
                     if (videoRef.current) {
+                      setHistory([]);
                       videoRef.current.currentTime = r.time - 2;
                       // remove the history after the row time
                       setHistory((h) => h.filter((x) => x.time + 2 < r.time));
