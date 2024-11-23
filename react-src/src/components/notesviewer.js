@@ -38,9 +38,10 @@ function addBlankOctaveGroups(octaveGroups) {
   return octaveGroups;
 }
 
-export const NotesViewer = ({ notes, videoId }) => {
+export const NotesViewer = ({ notes, videoId, onTimeClick }) => {
   const [history, setHistory] = useState([]);
   const [dedupeEnabled, setDedupeEnabled] = useState(false);
+  const [savedNotes, setSavedNotes] = useState([]);
 
   const videoRef = useRef(document.getElementById(videoId));
 
@@ -122,6 +123,21 @@ export const NotesViewer = ({ notes, videoId }) => {
           >
             clear
           </button>
+          <div className="flex gap-1">
+            {savedNotes.map((r, idx) => (
+              <button
+                className="flex items-center bg-gray-200 rounded-md px-2 py-1"
+                onClick={() => {
+                  // when clicked remove from saved notes
+                  setSavedNotes((s) => s.filter((_, i) => i !== idx));
+                }}
+              >
+                <p className="text-xs font-mono">
+                  {r.row[0].split("|")[0].trim()}
+                </p>
+              </button>
+            ))}
+          </div>
         </div>
         <div
           className="flex border border-gray-200 rounded-md"
@@ -137,14 +153,19 @@ export const NotesViewer = ({ notes, videoId }) => {
                   className="text-xs font-mono"
                   role="button"
                   onClick={() => {
+                    // when clicked on a row, jump to that time
                     if (videoRef.current) {
                       videoRef.current.currentTime = r.time - 2;
+                      // remove the history after the row time
+                      setHistory((h) => h.filter((x) => x.time + 2 < r.time));
                       if (videoRef.current.paused) {
                         videoRef.current.play();
                         // play for 3s
-                        setTimeout(() => {
-                          videoRef.current.pause();
-                        }, 3000);
+                        // setTimeout(() => {
+                        //   videoRef.current.pause();
+                        // }, 3000);
+
+                        setSavedNotes((s) => [...s, r]);
                       }
                     }
                   }}
