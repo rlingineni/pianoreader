@@ -5,7 +5,7 @@ import { useState, useEffect, useRef } from "react";
 
 // create random array of pressed octaves and notes
 
-const validNotes = ["A", "B", "C", "D", "E", "F", "G"];
+const validNotes = ["C", "D", "E", "F", "G", "A", "B"];
 
 // convert seconds to MM:SS
 const minuteSeconds = (currentTime) =>
@@ -75,6 +75,9 @@ export const NotesViewer = ({ notes, videoId, onTimeClick }) => {
         value +
         "\n",
     ];
+
+    // Sort notes starting at C -> G
+   
 
     if (dedupeEnabled && history[0].row === row) {
       // skip entry

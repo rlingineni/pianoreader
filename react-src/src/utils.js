@@ -35,8 +35,6 @@ export function getBlackOrWhite(pixels) {
     histogram[Math.floor(color)]++;
   }
 
-  // divide the histogram into three parts
-
   const firstHalf = histogram.slice(0, 85);
   const secondHalf = histogram.slice(85, 170);
   const thirdHalf = histogram.slice(170, 256);

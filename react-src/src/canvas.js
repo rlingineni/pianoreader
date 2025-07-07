@@ -43,7 +43,7 @@ function fixPixels(rgb) {
   return rgb * window.devicePixelRatio;
 }
 
-export function setupCanvas(onAnimFrame) {
+export async function setupCanvas(onAnimFrame) {
   if (canvas) {
     console.log("Canvas already setup");
     return;
@@ -68,15 +68,28 @@ export function setupCanvas(onAnimFrame) {
   var canvas2dBackend = new fabric.Canvas2dFilterBackend();
   fabric.filterBackend = canvas2dBackend;
 
-  addVideoToCanvas(onAnimFrame);
+  await addVideoToCanvas(onAnimFrame);
+}
+
+function waitForVideoMetadata(video) {
+  return new Promise((resolve) => {
+    if (video.readyState >= 1) {
+      console.log("Video metadata already loaded");
+      resolve();
+    } else {
+      console.log("Waiting for video metadata to load");
+      video.addEventListener("loadedmetadata", resolve, { once: true });
+    }
+  });
 }
 
 /**
  * Adds the video1 element to the canvas
  */
-function addVideoToCanvas(onAnimFrame) {
+async function addVideoToCanvas(onAnimFrame) {
   // create html video element
   const video = document.getElementById("video1");
+  await waitForVideoMetadata(video);
 
   video1 = new fabric.Image(video, {
     left: 0,
@@ -86,24 +99,42 @@ function addVideoToCanvas(onAnimFrame) {
   });
 
   // find the center point of the container
-  const center = canvas.getCenter();
 
   // now find the width of the vido
 
-  if (video1.width > canvas.width) {
-    video1.scaleToWidth(canvas.width - 20);
-  }
+  console.log("Video width", video.width);
+  console.log("Video height", video.height);
 
-  if (video1.getScaledHeight() > canvas.height) {
-    video1.scaleToHeight(canvas.height - 10);
-  }
+  console.log("Canvas width", canvas.width);
+  console.log("Canvas height", canvas.height);
 
-  // left is vide/2
-  video1.left = center.left - video1.getScaledWidth() / 2;
+  // Use the natural video size for scaling
+  const naturalWidth = video.videoWidth;
+  const naturalHeight = video.videoHeight;
+  const maxWidth = canvas.width - 20;
+  const maxHeight = canvas.height;
+  const scaleX = maxWidth / naturalWidth;
+  const scaleY = maxHeight / naturalHeight;
+  const scale = Math.min(scaleX, scaleY);
+  console.log(scaleX, scaleY, scale);
+
+  video1.scale(scale);
+  video1.setCoords(); // Ensure Fabric recalculates bounds
+
+  console.log(video1.getScaledWidth());
+
+  console.log("Natural width:", naturalWidth);
+
+  // if scaling has to be more than 1, account for the extra retina factor
+  const usePixelRatio = scale > 1 ? window.devicePixelRatio : 1;
+
+  // Center horizontally
+  video1.left = (canvas.width - video1.getScaledWidth() / usePixelRatio) / 2;
   video1.top = 0;
 
   canvas.add(video1);
   video1.selectable = false;
+
   video1.getElement().play();
   video1.getElement().pause();
   canvas.sendToBack(video1);
@@ -123,7 +154,7 @@ function addVideoToCanvas(onAnimFrame) {
     if (isVideoPlaying(video1.getElement())) {
       if (onAnimFrame) onAnimFrame();
     }
-    
+
     canvas.renderAll();
     fabric.util.requestAnimFrame(render);
   });

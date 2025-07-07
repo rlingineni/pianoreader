@@ -23,13 +23,11 @@ import {
 import { renderCanvasVideoStream } from "./utils";
 import { NotesViewer } from "./components/notesviewer";
 import SelectList from "./components/selectlist";
-import { validateYoutubeUrl, downloadYoutubeVideo } from "./bgPlayer";
 
 function App() {
   const [canvasState, setCanvasState] = useState("info"); // fetching, downloading, done, error
 
   const [currentStep, setCurrentStep] = useState(0);
-  const [videoId, setVideoId] = useState("2GrzF9nnkxk");
 
   const [visibleNotes, setVisibleNotes] = useState([]);
 
@@ -46,8 +44,8 @@ function App() {
     };
 
     try {
-      renderCanvasVideoStream(src, 1280, 720);
-      setupCanvas(onAnimFrame);
+      renderCanvasVideoStream(src, 1280, 1080);
+      await setupCanvas(onAnimFrame);
       setCanvasState("done");
       setCurrentStep(1);
 
@@ -105,15 +103,17 @@ function App() {
         return (
           <div className="text-center">
             <p className="mb-2"> Load a Piano Tutorial to Begin </p>
-            <button
-              onClick={() => {
-                loadVideoFromFile("./video.mp4");
-              }}
-            >
-              <p className="underline text-indigo-600 text-sm">
-                Try demo video
-              </p>
-            </button>
+            <div className="flex gap-2">
+              {["someday", "samayama", "sunrise-theme"].map((song) => (
+                <button
+                  onClick={() => {
+                    loadVideoFromFile(`/${song}.mp4`);
+                  }}
+                >
+                  <p className="underline text-indigo-600 text-sm">{song}</p>
+                </button>
+              ))}
+            </div>
           </div>
         );
       case "fetching":
@@ -132,10 +132,28 @@ function App() {
   return (
     <div className="px-12 h-full py-4">
       <div className="flex flex-col gap-1">
-        <div className="flex gap-2 items-center w-full">
-          <Logo className="h-12 w-24 mb-3 mr-6" />
-          <div className="flex w-full items-center gap-2 ">
-            <input
+        <div className="flex gap-2 justify-between w-full">
+          <div>
+            <Logo className="h-12 w-24 mb-3 mr-6" />
+            <a href="#ss" className="text-xs mt-2 underline">
+              about
+            </a>
+            <a href="#ss" className="text-xs ml-2 underline">
+              source
+            </a>
+            {currentStep !== 0 && (
+              <button
+                className="ml-2 text-xs mt-2 underline"
+                onClick={() => {
+                  window.location.reload();
+                }}
+              >
+                reset
+              </button>
+            )}
+          </div>
+          <div className="flex items-center gap-2 ">
+            {/* <input
               type="text"
               placeholder="paste a youtube url"
               onBlur={async (e) => {
@@ -149,22 +167,26 @@ function App() {
                 }
               }}
               className="w-4/5 rounded-md border border-gray-200 py-1 px-2 text-sm text-gray-500"
-            />
-            <input
-              type="file"
-              accept="video/mp4, video/mov"
-              onChange={(e) => {
-                if (e.target.files.length > 0) {
-                  setCanvasState("downloading");
-                  loadVideoFromFile(URL.createObjectURL(e.target.files[0]));
-                }
-              }}
-              className="block  text-sm text-slate-500 border border-gray-200 rounded-md
+            /> */}
+            <div>
+              {currentStep === 0 && (
+                <input
+                  type="file"
+                  accept="video/mp4, video/mov"
+                  onChange={(e) => {
+                    if (e.target.files.length > 0) {
+                      setCanvasState("downloading");
+                      loadVideoFromFile(URL.createObjectURL(e.target.files[0]));
+                    }
+                  }}
+                  className="block -mt-4 text-sm text-slate-500 border border-gray-200 rounded-md
         file:mr-4 file:py-1 file:px-4 file:rounded-md
         file:border-0 file:text-sm file:font-semibold
         file:bg-indigo-50 file:text-indigo-700
         hover:file:bg-indigo-100 file:cursor-pointer"
-            />
+                />
+              )}
+            </div>
           </div>
         </div>
 
@@ -188,9 +210,9 @@ function App() {
             <div>
               <span className="flex gap-4">
                 <p>
-                  Place tracking points on{" "}
-                  <span className="text-red-500 font-bold text-lg">C</span> &{" "}
-                  <span className="text-blue-500 font-bold text-lg">D</span>{" "}
+                  Drag tracking points to{" "}
+                  <span className="text-red-500 font-bold text-lg">C1</span> &{" "}
+                  <span className="text-blue-500 font-bold text-lg">D1</span>{" "}
                   Keys
                 </p>
               </span>
@@ -249,7 +271,7 @@ function App() {
                     class="px-4 rounded-md h-8 border-2 text-gray-700 mb-1"
                     onClick={removeFullPiano}
                   >
-                    Adjust Points
+                    Adjust Tracker
                   </button>
                   <button
                     id="togglePlayback"
@@ -266,8 +288,9 @@ function App() {
           {currentStep === 3 && (
             <div>
               <p className="mb-4 text-sm flex items-center">
-                Adjust the trackers <div className="mx-2 w-2 h-2 bg-red-500" />
-                height to light up with the notes
+                Play the video, and adjust the tracking dots{" "}
+                <div className="mx-2 w-2 h-2 bg-red-500" />
+                so they light up with each note press
               </p>
               <div class="flex items-end justify-between">
                 <div className="flex gap-2 items-center">
@@ -296,12 +319,8 @@ function App() {
                       Light up on:
                     </label>
                     <SelectList
-                      options={["light areas", "dark areas"]}
-                      selectedValue={
-                        getDectionMode() === "white"
-                          ? "light areas"
-                          : "dark areas"
-                      }
+                      options={["light areas", "dark areas", "grey areas"]}
+                      selectedValue={getDectionMode() + " areas"}
                       onChange={setDetectionMode}
                     />
                   </div>
