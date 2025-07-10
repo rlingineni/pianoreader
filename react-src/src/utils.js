@@ -26,30 +26,28 @@ export const readVideoFromDisk = async () => {
 };
 
 // determine if an array of pixels is black or white
-export function getBlackOrWhite(pixels) {
-  // compute histogram of the pixel from 0-255
-  const histogram = new Array(256).fill(0);
-
+export function getBlackOrWhite(
+  pixels,
+  { detectionColor = "black", trackerSensitivity } = {}
+) {
+  // Compute average grayscale (luminance) value for all pixels
+  let sum = 0;
   for (const pixel of pixels) {
-    const color = (pixel.r + pixel.g + pixel.b) / 3;
-    histogram[Math.floor(color)]++;
+    sum += 0.299 * pixel.r + 0.587 * pixel.g + 0.114 * pixel.b;
   }
+  const avgGray = sum / pixels.length; // 0 (black) to 255 (white)
 
-  const firstHalf = histogram.slice(0, 85);
-  const secondHalf = histogram.slice(85, 170);
-  const thirdHalf = histogram.slice(170, 256);
+  // Define thresholds for black/white based on trackerSensitivity
+  const blackThreshold = 255 * trackerSensitivity;
+  const whiteThreshold = 255 * (1 - trackerSensitivity);
 
-  const firstHalfSum = firstHalf.reduce((acc, curr) => acc + curr, 0);
-  const secondHalfSum = secondHalf.reduce((acc, curr) => acc + curr, 0);
-  const thirdHalfSum = thirdHalf.reduce((acc, curr) => acc + curr, 0);
-
-  // get the sum with the most pixels
-  if (firstHalfSum > secondHalfSum && firstHalfSum > thirdHalfSum) {
+  if (avgGray <= blackThreshold) {
     return "black";
-  } else if (secondHalfSum > firstHalfSum && secondHalfSum > thirdHalfSum) {
-    return "grey";
-  } else {
+  } else if (avgGray >= whiteThreshold) {
     return "white";
+  } else {
+    // If you want to treat grey as black, just return "black" here
+    return "grey";
   }
 }
 

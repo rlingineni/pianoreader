@@ -17,6 +17,7 @@ import {
   getNotesForCurrentFrame,
   setDetectionMode,
   getDectionMode,
+  adjustTrackerSenitivity,
 } from "./canvas";
 
 // Import filesystem namespace
@@ -33,6 +34,7 @@ function App() {
 
   const [keyDistance, setKeyDistance] = useState(0);
   const [trackerRowHeight, setTrackerRowHeight] = useState(400);
+  const [trackerSensitivity, setTrackerSensitivity] = useState(33);
 
   async function loadVideoFromFile(src) {
     // contents of this function should not change (since it's intialized in setupCanvas)
@@ -83,6 +85,12 @@ function App() {
       setDistanceBetweenTrackingLines(value);
       setKeyDistance(value);
     }
+  }
+
+  function changeTrackerSensitivity(value) {
+    setTrackerSensitivity(value);
+    adjustTrackerSenitivity(value);
+    placePixelTrackers(getKeyTemplate(), trackerRowHeight);
   }
 
   async function finalizeNotes() {
@@ -315,13 +323,37 @@ function App() {
                     </span>
                   </div>
                   <div className="w-48 mt-1">
+                    <label class="block mb-2 text-sm font-medium text-gray-900">
+                      Sensitivity
+                    </label>
+                    <span className="flex items-center gap-2">
+                      <input
+                        type="range"
+                        min="10"
+                        max="100"
+                        value={trackerSensitivity}
+                        onChange={(e) => {
+                          changeTrackerSensitivity(parseInt(e.target.value));
+                        }}
+                        className="w-32 h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer dark:bg-gray-700"
+                      />
+                      <p gap="2">
+                        {trackerSensitivity.toString().padStart(2, "0")}
+                      </p>
+                    </span>
+                  </div>
+
+                  <div className="w-48 mt-1">
                     <label class="block mb-1 text-sm font-medium text-gray-900">
                       Light up on:
                     </label>
                     <SelectList
-                      options={["light areas", "dark areas", "grey areas"]}
+                      options={["dark areas", "light areas"]}
                       selectedValue={getDectionMode() + " areas"}
-                      onChange={setDetectionMode}
+                      onChange={(v) => {
+                        setDetectionMode(v);
+                        placePixelTrackers(getKeyTemplate(), trackerRowHeight);
+                      }}
                     />
                   </div>
                 </div>

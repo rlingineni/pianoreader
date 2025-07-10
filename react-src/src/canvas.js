@@ -10,10 +10,13 @@ let FkeyWidthOffsetPercent = 0;
 let CkeyWidthOffsetPercent = 0;
 let video1;
 
+
 let detectionColor = "black";
+let trackerSensitivity = 0.33;
 
 let mainCanvas;
 let ctx;
+
 
 const trackingRectDesign = {
   left: 170,
@@ -21,7 +24,22 @@ const trackingRectDesign = {
   fill: "red",
   width: 4,
   height: 30,
+  stroke: null, // Remove outline
+  strokeWidth: 0, // Remove outline
 };
+
+
+function readFromURLParams(){
+
+  // assign these to the global variables if we find them in the url params
+
+  // c1 = top, left
+  // d1 = top, left
+  // userDefinedDistance = 0.0
+  // trackerRowStartHeight
+  // sensitivity
+}
+
 
 function getPlayerDetails() {
   const element = document.getElementById("player");
@@ -139,7 +157,7 @@ async function addVideoToCanvas(onAnimFrame) {
   video1.getElement().pause();
   canvas.sendToBack(video1);
   addTrackingDots();
-  var filter = new fabric.Image.filters.BlackWhite();
+  var filter = new fabric.Image.filters.Grayscale();
   video1.filters.push(filter);
 
   const isVideoPlaying = (video) =>
@@ -154,6 +172,8 @@ async function addVideoToCanvas(onAnimFrame) {
     if (isVideoPlaying(video1.getElement())) {
       if (onAnimFrame) onAnimFrame();
     }
+
+    // video1.applyFilters();
 
     canvas.renderAll();
     fabric.util.requestAnimFrame(render);
@@ -213,6 +233,21 @@ export function generateTrackingLines() {
 
   const keyWidth = trackingPoint1.width;
 
+  // Log tracking point locations for reuse
+  console.log("TrackingPoint1:", {
+    left: trackingPoint1.left,
+    top: trackingPoint1.top,
+    width: trackingPoint1.width,
+    height: trackingPoint1.height,
+  });
+  
+  console.log("TrackingPoint2:", {
+    left: trackingPoint2.left,
+    top: trackingPoint2.top,
+    width: trackingPoint2.width,
+    height: trackingPoint2.height,
+  });
+
   // generate piano keys
 
   // hide the tracking points
@@ -267,7 +302,9 @@ export function generateTrackingLines() {
       ...trackingRectDesign,
       ...getKeyPlacement(i),
       top: trackingPoint1.top,
+      selectable: false,
     });
+
     keys.push(key);
     canvas.add(key);
   }
@@ -283,6 +320,8 @@ export function generateTrackingLines() {
  * Removes tracking lines and any pixel trackers
  */
 export function removeTrackingLines() {
+  canvas.discardActiveObject();
+
   for (const key of pianoKeys._objects) {
     canvas.remove(key);
   }
@@ -320,7 +359,7 @@ export function getKeyTemplate() {
     allKeys.push({
       start: left,
       end: left + key.width,
-      key: notes[i % notes.length] + Math.floor(i / notes.length),
+      key: notes[i % notes.length] + (Math.floor(i / notes.length) + 1), // Start at C1
     });
   });
 
@@ -391,6 +430,10 @@ export function setDetectionMode(mode) {
   }
 }
 
+export function adjustTrackerSenitivity(value) {
+  trackerSensitivity = value / 100;
+}
+
 export function getDectionMode() {
   return detectionColor;
 }
@@ -433,22 +476,26 @@ export function getNotesForCurrentFrame() {
           ...[left + i, top + j, 1, 1].map(fixPixels)
         );
 
-        pixels.push({
+        const pixelObj = {
           r: pixel.data[0],
           g: pixel.data[1],
           b: pixel.data[2],
           a: pixel.data[3],
-        });
+        };
+
+        pixels.push(pixelObj);
       }
     }
 
     // re-color the rect based on the color of the pixels
-    const color = getBlackOrWhite(pixels);
+    const color = getBlackOrWhite(pixels, {
+      trackerSensitivity,
+      detectionColor,
+    });
 
     const pianoKey = rect.get("piano-key");
     if (color === detectionColor) {
       keyValues.push(pianoKey);
-
       // create a rectangle 5 pixels above
       const dummy = new fabric.Rect({
         left: left,
@@ -458,7 +505,6 @@ export function getNotesForCurrentFrame() {
         height: 5,
       });
       canvas.add(dummy);
-
       dummyPixelRects.push(dummy);
     } else {
       rect.fill = "rgba(0,0,0,0)";
