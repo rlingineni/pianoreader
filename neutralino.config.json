@@ -2,7 +2,7 @@
   "applicationId": "js.neutralino.zero",
   "version": "1.0.0",
   "defaultMode": "window",
-  "documentRoot": "/react-src/build/",
+  "documentRoot": "/docs",
   "url": "/",
   "enableServer": true,
   "enableNativeAPI": true,
