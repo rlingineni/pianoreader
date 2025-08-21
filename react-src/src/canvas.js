@@ -9,14 +9,13 @@ let trackingPoint1, trackingPoint2, pianoKeys, pixelTrackingGroup;
 let FkeyWidthOffsetPercent = 0;
 let CkeyWidthOffsetPercent = 0;
 let video1;
-
+let trackerRowStartHeight = 270;
 
 let detectionColor = "black";
 let trackerSensitivity = 0.33;
 
 let mainCanvas;
 let ctx;
-
 
 const trackingRectDesign = {
   left: 170,
@@ -28,18 +27,101 @@ const trackingRectDesign = {
   strokeWidth: 0, // Remove outline
 };
 
+const trackingRectDesign2 = {
+  ...trackingRectDesign,
+  left: trackingRectDesign.left + 13,
+  fill: "blue",
+};
 
-function readFromURLParams(){
+export function readFromURLParams() {
+  const params = new URLSearchParams(window.location.search);
 
-  // assign these to the global variables if we find them in the url params
+  console.log(params.get("c1"));
+  // c1 and d1 are expected as "c1=left,top" and "d1=left,top"
+  if (params.has("c1")) {
+    const c1 = params.get("c1").split(",").map(Number);
+    if (c1.length === 2 && c1.every((v) => !isNaN(v))) {
+      trackingRectDesign.left = c1[0];
+      trackingRectDesign.top = c1[1];
+    } else {
+      console.warn("Invalid c1 param, expected format 'left,top'");
+    }
+  } else {
+    console.warn("Missing c1 param in URL");
+  }
 
-  // c1 = top, left
-  // d1 = top, left
-  // userDefinedDistance = 0.0
-  // trackerRowStartHeight
-  // sensitivity
+  if (params.has("d1")) {
+    const d1 = params.get("d1").split(",").map(Number);
+    if (d1.length === 2 && d1.every((v) => !isNaN(v))) {
+      trackingRectDesign2.left = d1[0];
+      trackingRectDesign2.top = d1[1];
+    } else {
+      console.warn("Invalid d1 param, expected format 'left,top'");
+    }
+  } else {
+    console.warn("Missing d1 param in URL");
+  }
+
+  if (params.has("kd")) {
+    const val = Number(params.get("kd"));
+    if (!isNaN(val)) {
+      distanceBetweenKeysUserDefined = val;
+    } else {
+      console.warn("Invalid kd param, expected a number");
+    }
+  }
+
+  if (params.has("h")) {
+    const val = Number(params.get("h"));
+    if (!isNaN(val)) {
+      trackerRowStartHeight = val;
+    } else {
+      console.warn("Invalid h param, expected a number");
+    }
+  }
+
+  if (params.has("s")) {
+    const val = Number(params.get("s"));
+    if (!isNaN(val)) {
+      trackerSensitivity = val;
+    } else {
+      console.warn("Invalid s param, expected a number");
+    }
+  }
 }
 
+export function setURLParams() {
+  console.log("Setting valuesss");
+
+  // Get current values
+  const c1 = trackingPoint1
+    ? `${trackingPoint1.left},${trackingPoint1.top}`
+    : "";
+  const d1 = trackingPoint2
+    ? `${trackingPoint2.left},${trackingPoint2.top}`
+    : "";
+  const kd =
+    typeof distanceBetweenKeysUserDefined === "number"
+      ? distanceBetweenKeysUserDefined
+      : "";
+  const h =
+    typeof trackerRowStartHeight === "number" ? trackerRowStartHeight : "";
+  const s = typeof trackerSensitivity === "number" ? trackerSensitivity : "";
+
+  // Build new params
+  const params = new URLSearchParams();
+  if (c1) params.set("c1", c1);
+  if (d1) params.set("d1", d1);
+  if (kd !== "") params.set("kd", kd);
+  if (h !== "") params.set("h", h);
+  if (s !== "") params.set("s", s);
+
+  // Update the URL without reloading the page
+  const newUrl = `${window.location.pathname}?${params.toString()}`;
+  window.history.replaceState({}, "", newUrl);
+
+  console.log("URL params updated:", params.toString());
+}
 
 function getPlayerDetails() {
   const element = document.getElementById("player");
@@ -186,14 +268,7 @@ export function addTrackingDots() {
   if (!trackingPoint1) {
     trackingPoint1 = new fabric.Rect(trackingRectDesign);
 
-    // toggle rotation controls
-    // rect.setControlsVisibility({ mtr: false })
-
-    trackingPoint2 = new fabric.Rect({
-      ...trackingRectDesign,
-      left: trackingPoint1.left + 13,
-      fill: "blue",
-    });
+    trackingPoint2 = new fabric.Rect(trackingRectDesign2);
     canvas.add(trackingPoint1);
     canvas.add(trackingPoint2);
   }
@@ -240,7 +315,7 @@ export function generateTrackingLines() {
     width: trackingPoint1.width,
     height: trackingPoint1.height,
   });
-  
+
   console.log("TrackingPoint2:", {
     left: trackingPoint2.left,
     top: trackingPoint2.top,
@@ -298,15 +373,22 @@ export function generateTrackingLines() {
   // generate the keys
   const keys = [];
   for (let i = 1; i <= keyCount; i++) {
-    const key = new fabric.Rect({
+    const keyProps = {
       ...trackingRectDesign,
       ...getKeyPlacement(i),
       top: trackingPoint1.top,
       selectable: false,
-    });
+    };
 
-    keys.push(key);
-    canvas.add(key);
+    // Clip keys that go beyond the video width
+    if (keyProps.left + keyProps.width > video1.left + video1.getScaledWidth()) {
+      // Optionally, adjust the width so the key ends exactly at the video edge
+      keyProps.width = Math.max(0, width - keyProps.left);
+      if (keyProps.width === 0) continue; // Skip if fully out of bounds
+    }
+
+    keys.push(new fabric.Rect(keyProps));
+    canvas.add(keys[keys.length - 1]);
   }
 
   // group the keys
@@ -378,8 +460,13 @@ export function placePixelTrackers(pianoKeyTemplate, trackerRowStart) {
   removeTrackingLines();
   canvas.renderAll();
 
+  console.log("DRAWING AT " + trackerRowStart);
+
+  // update the global variable
+  trackerRowStartHeight = trackerRowStart;
+
   const trackerWidth = pianoKeyTemplate[0].end - pianoKeyTemplate[0].start;
-  const pixelRowStart = trackerRowStart || 270;
+  const pixelRowStart = trackerRowStartHeight;
 
   const width = video1.width;
 

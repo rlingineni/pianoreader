@@ -52,7 +52,7 @@ export function getBlackOrWhite(
 }
 
 // render an invisible video element so we can send to the canvas
-export function renderCanvasVideoStream(src, width, height) {
+export function renderCanvasVideoStream(src, width, height, time = 5) {
   // if the video element already exists, remove it
   var existingEl = document.getElementById("video1");
   if (existingEl) {
@@ -63,7 +63,7 @@ export function renderCanvasVideoStream(src, width, height) {
   video.id = "video1";
   video.src = src;
   video.autoplay = false;
-  video.currentTime = 5;
+  video.currentTime = time;
   video.playbackRate = 1;
   video.height = height;
   video.width = width;

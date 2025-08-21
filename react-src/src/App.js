@@ -18,6 +18,8 @@ import {
   setDetectionMode,
   getDectionMode,
   adjustTrackerSenitivity,
+  setURLParams,
+  readFromURLParams,
 } from "./canvas";
 
 // Import filesystem namespace
@@ -32,9 +34,19 @@ function App() {
 
   const [visibleNotes, setVisibleNotes] = useState([]);
 
-  const [keyDistance, setKeyDistance] = useState(0);
-  const [trackerRowHeight, setTrackerRowHeight] = useState(400);
-  const [trackerSensitivity, setTrackerSensitivity] = useState(33);
+  const [keyDistance, setKeyDistance] = useState(
+    Number(new URLSearchParams(window.location.search).get("kd")) || 0
+  );
+  const [trackerRowHeight, setTrackerRowHeight] = useState(
+    Number(new URLSearchParams(window.location.search).get("h")) || 400
+  );
+
+  const [trackerSensitivity, setTrackerSensitivity] = useState(
+    Number(new URLSearchParams(window.location.search).get("s") * 100) || 33
+  );
+
+  const initVideoTime =
+    Number(new URLSearchParams(window.location.search).get("t")) || 5;
 
   async function loadVideoFromFile(src) {
     // contents of this function should not change (since it's intialized in setupCanvas)
@@ -46,14 +58,11 @@ function App() {
     };
 
     try {
-      renderCanvasVideoStream(src, 1280, 1080);
+      readFromURLParams();
+      renderCanvasVideoStream(src, 1280, 1080, initVideoTime);
       await setupCanvas(onAnimFrame);
       setCanvasState("done");
       setCurrentStep(1);
-
-      const canvas = document.getElementById("canvas");
-      const ctx = canvas.getContext("2d");
-      console.log(ctx.getImageData(150, 100, 10, 10));
     } catch (ex) {
       console.log(ex);
       setCanvasState("error");
@@ -91,6 +100,7 @@ function App() {
     setTrackerSensitivity(value);
     adjustTrackerSenitivity(value);
     placePixelTrackers(getKeyTemplate(), trackerRowHeight);
+    setURLParams();
   }
 
   async function finalizeNotes() {
@@ -98,11 +108,13 @@ function App() {
 
     placePixelTrackers(allValues, trackerRowHeight);
     setCurrentStep(currentStep + 1);
+    setURLParams();
   }
 
   function onTrackerRowHeightChange(value) {
     setTrackerRowHeight(value);
     placePixelTrackers(getKeyTemplate(), value);
+    setURLParams();
   }
 
   function getLoaderText() {
@@ -268,9 +280,7 @@ function App() {
                         }}
                         className="w-32 h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer dark:bg-gray-700 rotate-180"
                       />
-                      <p gap="2">
-                        {(keyDistance * -1).toString().padStart(2, "0")}
-                      </p>
+                      <p gap="2">{keyDistance.toString().padStart(2, "0")}</p>
                     </span>
                   </div>
                 </div>
