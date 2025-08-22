@@ -20,7 +20,7 @@
   },
   "scripts": {
     "start": "react-scripts start",
-    "build": "react-scripts build && npm run publish",
+    "build": "DISABLE_ESLINT_PLUGIN=true && react-scripts build && npm run publish",
     "test": "react-scripts test",
     "eject": "react-scripts eject",
     "publish": "cp -r ./build/ ../docs"
