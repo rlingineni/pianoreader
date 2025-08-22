@@ -126,7 +126,7 @@ function App() {
               {["someday", "samayama", "sunrise-theme"].map((song) => (
                 <button
                   onClick={() => {
-                    loadVideoFromFile(`/${song}.mp4`);
+                    loadVideoFromFile(`./${song}.mp4`);
                   }}
                 >
                   <p className="underline text-indigo-600 text-sm">{song}</p>

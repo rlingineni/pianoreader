@@ -1,14 +1,14 @@
 {
   "files": {
-    "main.css": "/pianoreader/static/css/main.d23ad5d6.css",
-    "main.js": "/pianoreader/static/js/main.cae921bb.js",
-    "static/media/logo.svg": "/pianoreader/static/media/logo.b12d3815c585fd7d81a07b21053763ed.svg",
-    "index.html": "/pianoreader/index.html",
-    "main.d23ad5d6.css.map": "/pianoreader/static/css/main.d23ad5d6.css.map",
-    "main.cae921bb.js.map": "/pianoreader/static/js/main.cae921bb.js.map"
+    "main.css": "./static/css/main.d23ad5d6.css",
+    "main.js": "./static/js/main.f63af167.js",
+    "static/media/logo.svg": "./static/media/logo.b12d3815c585fd7d81a07b21053763ed.svg",
+    "index.html": "./index.html",
+    "main.d23ad5d6.css.map": "./static/css/main.d23ad5d6.css.map",
+    "main.f63af167.js.map": "./static/js/main.f63af167.js.map"
   },
   "entrypoints": [
     "static/css/main.d23ad5d6.css",
-    "static/js/main.cae921bb.js"
+    "static/js/main.f63af167.js"
   ]
 }
