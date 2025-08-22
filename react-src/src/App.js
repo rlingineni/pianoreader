@@ -172,21 +172,6 @@ function App() {
             )}
           </div>
           <div className="flex items-center gap-2 ">
-            {/* <input
-              type="text"
-              placeholder="paste a youtube url"
-              onBlur={async (e) => {
-                const validId = validateYoutubeUrl(e.target.value);
-
-                // not the same video
-                if (videoId !== validId) {
-                  setCanvasState("fetching");
-                  const src = await downloadYoutubeVideo(validId);
-                  loadVideoFromFile(src);
-                }
-              }}
-              className="w-4/5 rounded-md border border-gray-200 py-1 px-2 text-sm text-gray-500"
-            /> */}
             <div>
               {currentStep === 0 && (
                 <input

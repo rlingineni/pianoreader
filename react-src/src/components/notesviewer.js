@@ -82,7 +82,8 @@ export const NotesViewer = ({ notes, videoId, onTimeClick }) => {
     } else {
       setHistory((h) => [{ row, time: videoEl.currentTime }].concat(h));
     }
-  }, [notes, videoRef, dedupeEnabled, history]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [notes, videoRef, dedupeEnabled]);
 
   // remove duplicate rows that are next to each other
   const dedupeRows = (rows) => {
