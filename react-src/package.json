@@ -15,12 +15,15 @@
     "web-vitals": "^2.1.4",
     "ytdl-core": "^4.11.5"
   },
+  "engines": {
+    "node": "18.17.1"
+  },
   "scripts": {
     "start": "react-scripts start",
     "build": "react-scripts build && npm run publish",
     "test": "react-scripts test",
     "eject": "react-scripts eject",
-    "publish":"cp -r ./build/ ../docs"
+    "publish": "cp -r ./build/ ../docs"
   },
   "eslintConfig": {
     "extends": [
