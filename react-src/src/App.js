@@ -1,6 +1,5 @@
-import { useCallback, useState } from "react";
+import { useState } from "react";
 import { ReactComponent as Logo } from "./logo.svg";
-import { ReactComponent as RefreshIcon } from "./refresh.svg";
 import "./App.css";
 import "./tailwind.css";
 import VideoPlayerControls from "./components/playercontrols";

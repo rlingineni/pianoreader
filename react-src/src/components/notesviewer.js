@@ -40,7 +40,7 @@ function addBlankOctaveGroups(octaveGroups) {
 
 export const NotesViewer = ({ notes, videoId, onTimeClick }) => {
   const [history, setHistory] = useState([]);
-  const [dedupeEnabled, setDedupeEnabled] = useState(false);
+  const [dedupeEnabled] = useState(false);
   const [savedNotes, setSavedNotes] = useState([]);
 
   const videoRef = useRef(document.getElementById(videoId));
@@ -77,14 +77,12 @@ export const NotesViewer = ({ notes, videoId, onTimeClick }) => {
     ];
 
     // Sort notes starting at C -> G
-   
-
     if (dedupeEnabled && history[0].row === row) {
       // skip entry
     } else {
       setHistory((h) => [{ row, time: videoEl.currentTime }].concat(h));
     }
-  }, [notes, videoRef, dedupeEnabled]);
+  }, [notes, videoRef, dedupeEnabled, history]);
 
   // remove duplicate rows that are next to each other
   const dedupeRows = (rows) => {

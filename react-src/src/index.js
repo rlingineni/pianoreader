@@ -1,7 +1,6 @@
 import React from 'react';
 import ReactDOM from 'react-dom';
 import './index.css';
-import BlankPage from './BlankPage';
 import App from './App';
 
 // Import init function from "@neutralinojs/lib"

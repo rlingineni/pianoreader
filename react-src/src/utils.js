@@ -56,7 +56,7 @@ export function renderCanvasVideoStream(src, width, height, time = 5) {
   // if the video element already exists, remove it
   var existingEl = document.getElementById("video1");
   if (existingEl) {
-    existingEl.parentNode.removeChild(video);
+    existingEl.parentNode.removeChild();
   }
 
   var video = document.createElement("video");
