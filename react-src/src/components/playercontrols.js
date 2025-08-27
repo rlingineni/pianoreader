@@ -39,12 +39,12 @@ const ForwardIcon = () => (
     xmlns="http://www.w3.org/2000/svg"
     viewBox="0 0 24 24"
     fill="currentColor"
-    class="w-6 h-6"
+    className="w-6 h-6"
   >
     <path
-      fill-rule="evenodd"
+      fillRule="evenodd"
       d="M16.28 11.47a.75.75 0 0 1 0 1.06l-7.5 7.5a.75.75 0 0 1-1.06-1.06L14.69 12 7.72 5.03a.75.75 0 0 1 1.06-1.06l7.5 7.5Z"
-      clip-rule="evenodd"
+      clipRule="evenodd"
     />
   </svg>
 );
@@ -54,12 +54,12 @@ const BackwardIcon = () => (
     xmlns="http://www.w3.org/2000/svg"
     viewBox="0 0 24 24"
     fill="currentColor"
-    class="w-6 h-6"
+    className="w-6 h-6"
   >
     <path
-      fill-rule="evenodd"
+      fillRule="evenodd"
       d="M7.72 12.53a.75.75 0 0 1 0-1.06l7.5-7.5a.75.75 0 1 1 1.06 1.06L9.31 12l6.97 6.97a.75.75 0 1 1-1.06 1.06l-7.5-7.5Z"
-      clip-rule="evenodd"
+      clipRule="evenodd"
     />
   </svg>
 );
@@ -179,7 +179,7 @@ export default function VideoPlayerControls(props) {
             videoEl.currentTime = targetValue;
             setCurrentTime(targetValue);
           }}
-          class="w-4/5 h-4 bg-gray-200 appearance-none cursor-pointer dark:bg-gray-700 slider"
+          className="w-4/5 h-4 bg-gray-200 appearance-none cursor-pointer dark:bg-gray-700 slider"
         />
         <span gap="2" className="w-24">
           {new Date(currentTime * 1000).toISOString().substr(11, 8)}

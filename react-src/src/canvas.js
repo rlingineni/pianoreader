@@ -6,8 +6,8 @@ let canvas;
 let distanceBetweenKeysUserDefined = 0;
 let trackingPoint1, trackingPoint2, pianoKeys, pixelTrackingGroup;
 
-let FkeyWidthOffsetPercent = 0;
-let CkeyWidthOffsetPercent = 0;
+let FkeyWidthOffsetPercent = 0.15;
+let CkeyWidthOffsetPercent = 0.08;
 let video1;
 let trackerRowStartHeight = 270;
 
@@ -33,10 +33,9 @@ const trackingRectDesign2 = {
   fill: "blue",
 };
 
-export function readFromURLParams() {
+export function setCanvasFromParams() {
   const params = new URLSearchParams(window.location.search);
 
-  console.log(params.get("c1"));
   // c1 and d1 are expected as "c1=left,top" and "d1=left,top"
   if (params.has("c1")) {
     const c1 = params.get("c1").split(",").map(Number);
@@ -88,6 +87,15 @@ export function readFromURLParams() {
       console.warn("Invalid s param, expected a number");
     }
   }
+
+  if (params.has("mode")) {
+    const mode = params.get("mode");
+    if (mode && (mode.includes("dark") || mode.includes("light"))) {
+      setDetectionMode(mode);
+    } else {
+      console.warn("Invalid mode param");
+    }
+  }
 }
 
 export function setURLParams() {
@@ -107,6 +115,7 @@ export function setURLParams() {
   const h =
     typeof trackerRowStartHeight === "number" ? trackerRowStartHeight : "";
   const s = typeof trackerSensitivity === "number" ? trackerSensitivity : "";
+  const mode = detectionColor === "white" ? "light" : "dark";
 
   // Build new params
   const params = new URLSearchParams();
@@ -115,6 +124,7 @@ export function setURLParams() {
   if (kd !== "") params.set("kd", kd);
   if (h !== "") params.set("h", h);
   if (s !== "") params.set("s", s);
+  params.set("mode", mode);
 
   // Update the URL without reloading the page
   const newUrl = `${window.location.pathname}?${params.toString()}`;
@@ -381,7 +391,10 @@ export function generateTrackingLines() {
     };
 
     // Clip keys that go beyond the video width
-    if (keyProps.left + keyProps.width > video1.left + video1.getScaledWidth()) {
+    if (
+      keyProps.left + keyProps.width >
+      video1.left + video1.getScaledWidth()
+    ) {
       // Optionally, adjust the width so the key ends exactly at the video edge
       keyProps.width = Math.max(0, width - keyProps.left);
       if (keyProps.width === 0) continue; // Skip if fully out of bounds
@@ -522,7 +535,7 @@ export function adjustTrackerSenitivity(value) {
 }
 
 export function getDectionMode() {
-  return detectionColor;
+  return detectionColor === "white" ? "light" : "dark";
 }
 
 export function getNotesForCurrentFrame() {

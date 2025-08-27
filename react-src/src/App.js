@@ -17,7 +17,7 @@ import {
   getDectionMode,
   adjustTrackerSenitivity,
   setURLParams,
-  readFromURLParams,
+  setCanvasFromParams,
 } from "./canvas";
 
 // Import filesystem namespace
@@ -46,20 +46,20 @@ function App() {
 
   const [visibleNotes, setVisibleNotes] = useState([]);
 
-  const [keyDistance, setKeyDistance] = useState(
-    Number(new URLSearchParams(window.location.search).get("kd")) || 0
-  );
-  const [trackerRowHeight, setTrackerRowHeight] = useState(
-    Number(new URLSearchParams(window.location.search).get("h")) || 400
-  );
+  const [keyDistance, setKeyDistance] = useState(0);
+  const [trackerRowHeight, setTrackerRowHeight] = useState(400);
+  const [trackerSensitivity, setTrackerSensitivity] = useState(33);
 
-  const [trackerSensitivity, setTrackerSensitivity] = useState(
-    Number(new URLSearchParams(window.location.search).get("s") * 100) || 33
-  );
+  let initVideoTime = 5;
 
-  const initVideoTime =
-    Number(new URLSearchParams(window.location.search).get("t")) || 5;
+  function loadFromURLParams() {
+    const params = new URLSearchParams(window.location.search);
 
+    setKeyDistance(Number(params.get("kd")) || 0);
+    setTrackerRowHeight(Number(params.get("h")) || 400);
+    setTrackerSensitivity(Number(params.get("s")) * 100);
+    initVideoTime = params.get("t");
+  }
   async function loadVideoFromFile(src) {
     // contents of this function should not change (since it's intialized in setupCanvas)
     const onAnimFrame = async () => {
@@ -70,7 +70,8 @@ function App() {
     };
 
     try {
-      readFromURLParams();
+      loadFromURLParams();
+      setCanvasFromParams();
       renderCanvasVideoStream(src, 1280, 1080, initVideoTime);
       await setupCanvas(onAnimFrame);
       setCanvasState("done");
@@ -138,7 +139,8 @@ function App() {
             <button
               className="underline text-indigo-600 text-sm"
               onClick={() => {
-                window.location.href = "https://www.heyraviteja.com/post/portfolio/piano-reader";
+                window.location.href =
+                  "https://www.heyraviteja.com/post/portfolio/piano-reader";
               }}
             >
               Read Blog Post
@@ -162,16 +164,38 @@ function App() {
         <p className="mb-2"> Try an example tutorial, or load a file </p>
         <div className="flex flex-col gap-2">
           {[
-            "someday - OneRepublic",
-            "samayama - Hesham Abdul Wahab",
-            "sunrise-theme - Anirudh",
+            {
+              name: "someday - OneRepublic",
+              url: "http://localhost:3000/?c1=516.89074219702%2C414.9814808623585&d1=539.8875935571647%2C413.9827154715347&kd=4&h=416&s=0.86&t=5",
+            },
+            {
+              name: "samayama - Hesham Abdul Wahab",
+              url: "http://localhost:3000/?c1=444.9134124039784%2C416.9790116440063&d1=461.9121529480362%2C420.97407320730196&kd=1&h=416&s=0.54",
+            },
+            {
+              name: "sunrise-theme - Anirudh",
+              url: "http://localhost:3000/?c1=481.90176243651365%2C196.25186027192413&d1=498.9005029805715%2C196.25186027192407&kd=0&h=194&s=0.52&mode=light",
+            },
           ].map((song) => (
             <button
+              key={song.name}
               onClick={() => {
-                loadVideoFromFile(`./${song.split(" ")[0]}.mp4`);
+                function applyParamsFromUrlString(str) {
+                  const url = new URL(str);
+                  window.history.replaceState(
+                    {},
+                    "",
+                    "?" + url.searchParams.toString()
+                  );
+                }
+
+                applyParamsFromUrlString(song.url);
+
+                // set the url params for the video
+                loadVideoFromFile(`./${song.name.split(" ")[0]}.mp4`);
               }}
             >
-              <p className="underline text-indigo-600 text-sm">{song}</p>
+              <p className="underline text-indigo-600 text-sm">{song.name}</p>
             </button>
           ))}
         </div>
@@ -202,10 +226,16 @@ function App() {
         <div className="flex gap-2 justify-between w-full">
           <div>
             <Logo className="h-12 w-24 mb-3 mr-6" />
-            <a href="https://www.heyraviteja.com/post/portfolio/piano-reader" className="text-xs mt-2 underline">
+            <a
+              href="https://www.heyraviteja.com/post/portfolio/piano-reader"
+              className="text-xs mt-2 underline"
+            >
               about
             </a>
-            <a href="https://github.com/rlingineni/pianoreader" className="text-xs ml-2 underline">
+            <a
+              href="https://github.com/rlingineni/pianoreader"
+              className="text-xs ml-2 underline"
+            >
               source
             </a>
             {currentStep !== 0 && (
@@ -252,12 +282,12 @@ function App() {
               <Loader text={getLoaderText()} status={canvasState} />
             )}
           </div>
-          <div class="canvas-zone absolute top-0" key={"canvas-zone"}>
+          <div className="canvas-zone absolute top-0" key={"canvas-zone"}>
             <canvas id="canvas" key={"canvas"}></canvas>
           </div>
         </div>
 
-        <div class="mt-4">
+        <div className="mt-4">
           {currentStep === 1 && (
             <div>
               <span className="flex gap-4">
@@ -272,7 +302,7 @@ function App() {
               <div className="flex mt-2 gap-2">
                 <button
                   id="togglePlayback"
-                  class="px-4 rounded-md h-8 bg-indigo-500 text-white"
+                  className="px-4 rounded-md h-8 bg-indigo-500 text-white"
                   onClick={() => {
                     generateFullPiano();
                     setCurrentStep(currentStep + 1);
@@ -281,7 +311,7 @@ function App() {
                   Generate Full Piano
                 </button>
                 <button
-                  class="px-4 rounded-md h-8 border-2 text-gray-700"
+                  className="px-4 rounded-md h-8 border-2 text-gray-700"
                   onClick={resetDots}
                 >
                   Reset
@@ -295,10 +325,10 @@ function App() {
               <p className="mb-4 text-sm">
                 Adjust the slider till the keys match the piano keys
               </p>
-              <div class="flex items-end justify-between">
+              <div className="flex items-end justify-between">
                 <div className="flex gap-4">
                   <div className="w-48">
-                    <label class="block mb-1 text-sm font-medium text-gray-900">
+                    <label className="block mb-1 text-sm font-medium text-gray-900">
                       Key Distance
                     </label>
                     <span className="flex items-center gap-2">
@@ -318,14 +348,14 @@ function App() {
                 </div>
                 <div className="flex gap-4">
                   <button
-                    class="px-4 rounded-md h-8 border-2 text-gray-700 mb-1"
+                    className="px-4 rounded-md h-8 border-2 text-gray-700 mb-1"
                     onClick={removeFullPiano}
                   >
                     Adjust Tracker
                   </button>
                   <button
                     id="togglePlayback"
-                    class="px-4 rounded-md w-32 h-8 bg-indigo-500 text-white mb-1"
+                    className="px-4 rounded-md w-32 h-8 bg-indigo-500 text-white mb-1"
                     onClick={finalizeNotes}
                   >
                     See Notes
@@ -342,10 +372,10 @@ function App() {
                 <div className="mx-2 w-2 h-2 bg-red-500" />
                 so they light up with each note press
               </p>
-              <div class="flex items-end justify-between">
+              <div className="flex items-end justify-between">
                 <div className="flex gap-2 items-center">
                   <div className="w-48 mt-1">
-                    <label class="block mb-2 text-sm font-medium text-gray-900">
+                    <label className="block mb-2 text-sm font-medium text-gray-900">
                       Tracker Height
                     </label>
                     <span className="flex items-center gap-2">
@@ -365,7 +395,7 @@ function App() {
                     </span>
                   </div>
                   <div className="w-48 mt-1">
-                    <label class="block mb-2 text-sm font-medium text-gray-900">
+                    <label className="block mb-2 text-sm font-medium text-gray-900">
                       Sensitivity
                     </label>
                     <span className="flex items-center gap-2">
@@ -386,12 +416,12 @@ function App() {
                   </div>
 
                   <div className="w-48 mt-1">
-                    <label class="block mb-1 text-sm font-medium text-gray-900">
+                    <label className="block mb-1 text-sm font-medium text-gray-900">
                       Light up on:
                     </label>
                     <SelectList
                       options={["dark areas", "light areas"]}
-                      selectedValue={getDectionMode() + " areas"}
+                      initialValue={getDectionMode() + " areas"}
                       onChange={(v) => {
                         setDetectionMode(v);
                         placePixelTrackers(getKeyTemplate(), trackerRowHeight);
@@ -400,7 +430,7 @@ function App() {
                   </div>
                 </div>
                 <button
-                  class="px-4 rounded-md h-8 border-2 text-gray-700 mb-1"
+                  className="px-4 rounded-md h-8 border-2 text-gray-700 mb-1"
                   onClick={() => {
                     generateFullPiano();
                     setCurrentStep(currentStep - 1);

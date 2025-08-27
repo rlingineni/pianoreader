@@ -11,15 +11,11 @@ import * as React from "react";
  * @returns {JSX.Element} JSX Element
  */
 
-export const SelectList = ({
-  options,
-  selectedValue,
-  onChange,
-  widthClass,
-}) => {
+export const SelectList = ({ options, initialValue, onChange, widthClass }) => {
   return (
     <div className={widthClass || "w-full"}>
       <select
+        defaultValue={initialValue}
         onChange={(e) => {
           onChange(e.target.value);
         }}
@@ -40,9 +36,7 @@ export const SelectList = ({
         aria-label="Default select example"
       >
         {options.map((option, index) => (
-          <option value={option} selected={option === selectedValue}>
-            {option}
-          </option>
+          <option key={option+"index"} value={option}>{option}</option>
         ))}
       </select>
     </div>

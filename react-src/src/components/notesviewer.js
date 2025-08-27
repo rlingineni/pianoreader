@@ -150,6 +150,7 @@ export const NotesViewer = ({ notes, videoId, onTimeClick }) => {
             >
               {rowData.map((r) => (
                 <p
+                  key={r.time + "-" + Math.random()}
                   className="text-xs font-mono"
                   role="button"
                   onClick={() => {
