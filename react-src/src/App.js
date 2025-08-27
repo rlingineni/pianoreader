@@ -1,7 +1,6 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { ReactComponent as Logo } from "./logo.svg";
 import "./App.css";
-import "./tailwind.css";
 import VideoPlayerControls from "./components/playercontrols";
 import Loader from "./components/loader";
 import {
@@ -26,7 +25,21 @@ import { renderCanvasVideoStream } from "./utils";
 import { NotesViewer } from "./components/notesviewer";
 import SelectList from "./components/selectlist";
 
+function useIsMobile() {
+  const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
+
+  useEffect(() => {
+    const handleResize = () => setIsMobile(window.innerWidth <= 768);
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
+
+  return isMobile;
+}
+
 function App() {
+  const isMobile = useIsMobile();
+
   const [canvasState, setCanvasState] = useState("info"); // fetching, downloading, done, error
 
   const [currentStep, setCurrentStep] = useState(0);
@@ -116,25 +129,60 @@ function App() {
     setURLParams();
   }
 
+  function getInfoScreen() {
+    if (isMobile) {
+      return (
+        <div className="text-center">
+          <p className="mb-2">This app works best on larger screens</p>
+          <div className="flex flex-col gap-2 mt-6">
+            <button
+              className="underline text-indigo-600 text-sm"
+              onClick={() => {
+                window.location.href = "https://www.heyraviteja.com/post/portfolio/piano-reader";
+              }}
+            >
+              Read Blog Post
+            </button>
+            <p className="text-xs">or</p>
+            <button
+              className="underline text-indigo-600 text-sm"
+              onClick={() => {
+                window.location.href = "./short-demo.html";
+              }}
+            >
+              Watch Demo Video
+            </button>
+          </div>
+        </div>
+      );
+    }
+
+    return (
+      <div className="text-center">
+        <p className="mb-2"> Try an example tutorial, or load a file </p>
+        <div className="flex flex-col gap-2">
+          {[
+            "someday - OneRepublic",
+            "samayama - Hesham Abdul Wahab",
+            "sunrise-theme - Anirudh",
+          ].map((song) => (
+            <button
+              onClick={() => {
+                loadVideoFromFile(`./${song.split(" ")[0]}.mp4`);
+              }}
+            >
+              <p className="underline text-indigo-600 text-sm">{song}</p>
+            </button>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
   function getLoaderText() {
     switch (canvasState) {
       case "info":
-        return (
-          <div className="text-center">
-            <p className="mb-2"> Load a Piano Tutorial to Begin </p>
-            <div className="flex gap-2">
-              {["someday", "samayama", "sunrise-theme"].map((song) => (
-                <button
-                  onClick={() => {
-                    loadVideoFromFile(`./${song}.mp4`);
-                  }}
-                >
-                  <p className="underline text-indigo-600 text-sm">{song}</p>
-                </button>
-              ))}
-            </div>
-          </div>
-        );
+        return getInfoScreen();
       case "fetching":
         return "Fetching video from youtube";
       case "downloading":
@@ -154,10 +202,10 @@ function App() {
         <div className="flex gap-2 justify-between w-full">
           <div>
             <Logo className="h-12 w-24 mb-3 mr-6" />
-            <a href="#ss" className="text-xs mt-2 underline">
+            <a href="https://www.heyraviteja.com/post/portfolio/piano-reader" className="text-xs mt-2 underline">
               about
             </a>
-            <a href="#ss" className="text-xs ml-2 underline">
+            <a href="https://github.com/rlingineni/pianoreader" className="text-xs ml-2 underline">
               source
             </a>
             {currentStep !== 0 && (
@@ -171,7 +219,7 @@ function App() {
               </button>
             )}
           </div>
-          <div className="flex items-center gap-2 ">
+          <div className="flex items-center gap-2 hidden md:flex">
             <div>
               {currentStep === 0 && (
                 <input

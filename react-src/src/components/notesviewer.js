@@ -3,14 +3,13 @@ import { ScrollSync, ScrollSyncPane } from "react-scroll-sync";
 
 import { useState, useEffect, useRef } from "react";
 
-// create random array of pressed octaves and notes
-
 const validNotes = ["C", "D", "E", "F", "G", "A", "B"];
 
-// convert seconds to MM:SS
+// convert seconds to MM:SS timestamp
 const minuteSeconds = (currentTime) =>
   new Date(currentTime * 1000).toISOString().substr(11, 8);
 
+// breaks the notes like A1, A2, C2 into an 2D array to iterate easier
 function getOctaveGroups(notes) {
   const octaveGroups = {};
   for (const note of notes) {
@@ -28,7 +27,7 @@ function getOctaveGroups(notes) {
   return octaveGroups;
 }
 
-// add octave groups 1->8
+// add missing octave groups 1->8 with empty spaces for padding
 function addBlankOctaveGroups(octaveGroups) {
   for (let i = 1; i <= 8; i++) {
     if (!octaveGroups[i]) {
@@ -76,7 +75,6 @@ export const NotesViewer = ({ notes, videoId, onTimeClick }) => {
         "\n",
     ];
 
-    // Sort notes starting at C -> G
     if (dedupeEnabled && history[0].row === row) {
       // skip entry
     } else {
@@ -162,11 +160,6 @@ export const NotesViewer = ({ notes, videoId, onTimeClick }) => {
                       setHistory((h) => h.filter((x) => x.time + 2 < r.time));
                       if (videoRef.current.paused) {
                         videoRef.current.play();
-                        // play for 3s
-                        // setTimeout(() => {
-                        //   videoRef.current.pause();
-                        // }, 3000);
-
                         setSavedNotes((s) => [...s, r]);
                       }
                     }
